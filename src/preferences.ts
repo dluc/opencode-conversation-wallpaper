@@ -1,4 +1,6 @@
-export type Mode = "matrix" | "image"
+export const MODES = ["matrix", "clouds", "fireflies", "starfield", "aurora", "image"] as const
+export type Mode = typeof MODES[number]
+export type BuiltinMode = Exclude<Mode, "image">
 export interface Preferences {
   enabled: boolean
   mode: Mode

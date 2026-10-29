@@ -1,13 +1,14 @@
 import { Command, Plugin, SettingsPage, Slot, Store, Style } from "@opencode/plugin/gui"
 import { Schema } from "effect"
-import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js"
-import { defaults, validateImage, type Preferences } from "./preferences"
+import { createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js"
+import { defaults, MODES, validateImage, type BuiltinMode, type Preferences } from "./preferences"
+import { collection, createScene } from "./scenes"
 import { mountWallpaper, statusMessage, watchTimelines, type WallpaperStatus } from "./wallpaper"
 import css from "./style.css?inline"
 
 const PreferencesSchema = Schema.Struct({
   enabled: Schema.Boolean,
-  mode: Schema.Literals(["matrix", "image"]),
+  mode: Schema.Literals(MODES),
   image: Schema.String,
   imageName: Schema.String,
   dimming: Schema.Number,
@@ -48,6 +49,19 @@ export default Plugin.define({
       return null
     }
     ctx.add(Slot, { at: "window.bottom", render: () => <TimelineBridge /> })
+
+    function Thumbnail(props: { mode: BuiltinMode }) {
+      let canvas!: HTMLCanvasElement
+      onMount(() => {
+        const context = canvas.getContext("2d")
+        if (!context) return
+        const scene = createScene(props.mode)
+        scene.resize(canvas.width, canvas.height)
+        // Gallery thumbnails are stills. Only the selected wallpaper has an animation loop.
+        scene.draw(context, 0, 1)
+      })
+      return <canvas ref={canvas} class="cw-thumbnail" width="300" height="120" aria-hidden="true" />
+    }
 
     function Preview() {
       let host!: HTMLDivElement
@@ -96,22 +110,26 @@ export default Plugin.define({
       return <section class="cw-settings" aria-label="Conversation wallpaper settings">
         <header class="cw-heading"><span class="cw-kicker">CONVERSATION WALLPAPER</span>
           <h2>Set the atmosphere.</h2>
-          <p>Digital rain or your own image. Behind the conversation, never in the way.</p>
+          <p>Five ways to move. Or something of your own. Always behind the conversation.</p>
         </header>
         <Preview />
         <div class="cw-controls">
           <ui.Switch label="Enable wallpaper" description="Applies to conversations in every workspace."
             checked={prefs().enabled} onChange={(value) => change("enabled", value)} />
-          <fieldset class="cw-mode"><legend>Background</legend>
-            <label classList={{ "cw-selected": prefs().mode === "matrix" }}>
-              <input type="radio" name="cw-mode" value="matrix" checked={prefs().mode === "matrix"}
-                onChange={() => { change("mode", "matrix"); setError("") }} />
-              <span><strong>Digital rain</strong><small>Matrix-style animated glyphs</small></span>
-            </label>
+          <fieldset class="cw-mode"><legend>Choose your atmosphere</legend>
+            <For each={collection}>{(wallpaper) =>
+              <label classList={{ "cw-selected": prefs().mode === wallpaper.id }}>
+                <input type="radio" name="cw-mode" value={wallpaper.id} checked={prefs().mode === wallpaper.id}
+                  onChange={() => { change("mode", wallpaper.id); setError("") }} />
+                <Thumbnail mode={wallpaper.id} />
+                <span class="cw-card-copy"><strong>{wallpaper.title}</strong><small>{wallpaper.description}</small></span>
+              </label>
+            }</For>
             <label classList={{ "cw-selected": prefs().mode === "image" }}>
               <input type="radio" name="cw-mode" value="image" checked={prefs().mode === "image"}
                 onChange={() => change("mode", "image")} />
-              <span><strong>Your image</strong><small>Still or animated</small></span>
+              <div class="cw-upload-thumbnail" aria-hidden="true"><span>＋</span><small>BRING YOUR OWN</small></div>
+              <span class="cw-card-copy"><strong>Your image</strong><small>Still or animated · Played as-is</small></span>
             </label>
           </fieldset>
           <Show when={prefs().mode === "image"}>
@@ -126,6 +144,7 @@ export default Plugin.define({
               }}>Remove image</ui.Button></Show>
               <p>PNG, JPEG, GIF, WebP or AVIF · Up to 8 MB. Animated GIFs work too.
                 Images are saved locally in OpenCode’s app storage; nothing is uploaded.</p>
+              <p>Still images stay still. Animated images use their own motion and playback speed—no added effects.</p>
               <label class="cw-select-label">Image fit
                 <select value={prefs().fit} onChange={(event) => change("fit", event.currentTarget.value as Preferences["fit"])}>
                   <option value="cover">Fill conversation</option><option value="contain">Show entire image</option>
@@ -139,19 +158,19 @@ export default Plugin.define({
               onChange={(event) => change("dimming", event.currentTarget.valueAsNumber)} />
             <small>Only the wallpaper is faded, never the messages. Try 35–55% if it is too faint.</small>
           </label>
-          <Show when={prefs().mode === "matrix"}>
+          <Show when={prefs().mode !== "image"}>
             <ui.Button onClick={() => {
               ctx.stores.preferences.update((draft) => {
                 draft.enabled = true; draft.dimming = 40; draft.speed = 1.2; draft.paused = false
               })
-            }}>Make rain more visible</ui.Button>
-            <label class="cw-range"><span>Rain speed <output>{prefs().speed.toFixed(1)}×</output></span>
-              <input type="range" aria-label="Rain speed" min="0.2" max="2" step="0.1" value={prefs().speed}
+            }}>Make wallpaper more visible</ui.Button>
+            <label class="cw-range"><span>Animation speed <output>{prefs().speed.toFixed(1)}×</output></span>
+              <input type="range" aria-label="Animation speed" min="0.2" max="2" step="0.1" value={prefs().speed}
                 onChange={(event) => change("speed", event.currentTarget.valueAsNumber)} />
             </label>
           </Show>
           <ui.Switch label="Pause animation" checked={prefs().paused} onChange={(value) => change("paused", value)}
-            description="Freezes digital rain and animated images." />
+            description="Freezes built-in wallpapers and animated images." />
           <ui.Switch label="Follow system Reduce motion" checked={prefs().respectReducedMotion !== false}
             onChange={(value) => change("respectReducedMotion", value)}
             description="Enabled by default. Turn off only if you explicitly want wallpaper animation despite your system’s reduced-motion preference." />
@@ -163,7 +182,7 @@ export default Plugin.define({
     ctx.add(SettingsPage, {
       id: "wallpaper", title: "Conversation wallpaper", icon: "settings-gear",
       entries: [
-        { id: "background", title: "Conversation background image and Matrix rain", keywords: "wallpaper gif animation dimming pause" },
+        { id: "background", title: "Wallpaper collection and uploaded images", keywords: "matrix rain clouds fireflies starfield aurora wallpaper gif animation dimming pause" },
       ],
       render: () => <Settings />,
     })

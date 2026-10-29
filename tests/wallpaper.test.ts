@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 import { defaults } from "../src/preferences"
+import { collection } from "../src/scenes"
 import { mountWallpaper, statusMessage, timelineHost, watchTimelines } from "../src/wallpaper"
 import { drawing, frames, intersect, intersections, mediaListeners, resizes, runFrame, setReduced, visibility } from "./environment"
 
@@ -11,6 +12,47 @@ function timeline() {
 }
 
 describe("wallpaper lifecycle", () => {
+  for (const entry of collection) {
+    it(`${entry.title} uses the shared animation lifecycle and does not animate uploads`, () => {
+      const host = timeline(), report = vi.fn()
+      const prefs = { ...defaults, mode: entry.id }
+      const controller = mountWallpaper(host, prefs, vi.fn(), report)
+      intersect(true)
+      expect(frames.size).toBe(1)
+      runFrame(100); runFrame(150)
+      expect(report.mock.lastCall![0]).toMatchObject({ reason: "animation", name: entry.title, frames: 1 })
+      controller.update({ ...prefs, paused: true })
+      expect(frames.size).toBe(0)
+      controller.update(prefs)
+      expect(frames.size).toBe(1)
+      setReduced(true)
+      expect(frames.size).toBe(0)
+      setReduced(false)
+      expect(frames.size).toBe(1)
+      intersect(false)
+      expect(frames.size).toBe(0)
+      intersect(true)
+      controller.update({ ...prefs, mode: "image" })
+      expect(frames.size).toBe(0)
+      expect(host.querySelector("canvas")!.hidden).toBe(true)
+      controller.update({ ...prefs, enabled: false })
+      expect(frames.size).toBe(0)
+      controller.dispose()
+    })
+  }
+  it("switches built-ins without accumulating layers or animation loops", () => {
+    const host = timeline(), report = vi.fn()
+    const controller = mountWallpaper(host, defaults, vi.fn(), report)
+    intersect(true)
+    for (const entry of [...collection, ...collection]) {
+      controller.update({ ...defaults, mode: entry.id })
+      expect(host.querySelectorAll(".cw-layer")).toHaveLength(1)
+      expect(frames.size).toBe(1)
+      expect(report.mock.lastCall![0].name).toBe(entry.title)
+    }
+    controller.dispose()
+    expect(frames.size).toBe(0)
+  })
   it("recognizes the current host and fails closed on unknown layouts", () => {
     const host = timeline()
     expect(timelineHost(host.firstElementChild!)).toBe(host)
@@ -74,7 +116,7 @@ describe("wallpaper lifecycle", () => {
     expect(frames.size).toBe(1)
     runFrame(100)
     runFrame(150)
-    expect(report.mock.lastCall![0]).toMatchObject({ reason: "rain", frames: 1, width: 800, height: 600 })
+    expect(report.mock.lastCall![0]).toMatchObject({ reason: "animation", name: "Digital rain", frames: 1, width: 800, height: 600 })
     expect(statusMessage(report.mock.lastCall![0])).toContain("1 frames painted")
     controller.update({ ...prefs, respectReducedMotion: false, paused: true })
     expect(report.mock.lastCall![0].reason).toBe("paused")

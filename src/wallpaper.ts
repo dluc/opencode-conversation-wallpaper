@@ -1,5 +1,5 @@
 import { clamp, imageSource, type Preferences } from "./preferences"
-import { Rain } from "./rain"
+import { createScene, wallpaperName } from "./scenes"
 
 export interface Wallpaper {
   update(preferences: Preferences): void
@@ -7,7 +7,8 @@ export interface Wallpaper {
 }
 
 export interface WallpaperStatus {
-  reason: "disabled" | "paused" | "reduced-motion" | "hidden" | "offscreen" | "no-size" | "no-canvas" | "no-image" | "image" | "rain"
+  reason: "disabled" | "paused" | "reduced-motion" | "hidden" | "offscreen" | "no-size" | "no-canvas" | "no-image" | "image" | "animation"
+  name: string
   frames: number
   width: number
   height: number
@@ -25,7 +26,7 @@ export function statusMessage(status: WallpaperStatus): string {
     case "no-canvas": return "Canvas rendering is unavailable in this window."
     case "no-image": return "Choose an image to display a wallpaper."
     case "image": return "Image displayed. Animated image playback is allowed."
-    case "rain": return status.frames ? `Digital rain is animating · ${status.frames} frames painted.` : "Digital rain is waiting for its first animation frame."
+    case "animation": return status.frames ? `${status.name} is animating · ${status.frames} frames painted.` : `${status.name} is waiting for its first animation frame.`
   }
 }
 
@@ -51,9 +52,10 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
   host.prepend(layer)
   host.classList.add("cw-host")
   const context = canvas.getContext("2d")
-  const rain = new Rain()
   const reduced = matchMedia("(prefers-reduced-motion: reduce)")
   let prefs = initial
+  let sceneMode = initial.mode
+  let scene = initial.mode === "image" ? undefined : createScene(initial.mode)
   let visible = false
   let disposed = false
   let frame = 0
@@ -70,20 +72,20 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
   const reducedMotion = () => reduced.matches && prefs.respectReducedMotion !== false
   const animated = () => !prefs.paused && !reducedMotion() && visible && !document.hidden
   const status = () => {
-    const reason: WallpaperStatus["reason"] = !prefs.enabled ? "disabled" : prefs.mode === "matrix" && !context ? "no-canvas"
+    const reason: WallpaperStatus["reason"] = !prefs.enabled ? "disabled" : prefs.mode !== "image" && !context ? "no-canvas"
       : prefs.mode === "image" && !imageSource(prefs.image) ? "no-image" : prefs.paused ? "paused"
       : reducedMotion() ? "reduced-motion" : document.hidden ? "hidden" : !visible ? "offscreen"
-      : !width || !height ? "no-size" : prefs.mode === "matrix" ? "rain" : "image"
+      : !width || !height ? "no-size" : prefs.mode !== "image" ? "animation" : "image"
     layer.dataset.motion = reason
     layer.dataset.frames = String(paintedFrames)
-    reportStatus?.({ reason, frames: paintedFrames, width, height, opacity: 1 - clamp(prefs.dimming, 0, 100) / 100 })
+    reportStatus?.({ reason, name: wallpaperName(prefs.mode), frames: paintedFrames, width, height, opacity: 1 - clamp(prefs.dimming, 0, 100) / 100 })
   }
   const stop = () => { cancelAnimationFrame(frame); frame = 0; previous = 0 }
-  const paint = (elapsed: number) => { if (context) rain.draw(context, elapsed, prefs.speed) }
+  const paint = (elapsed: number) => { if (context) scene?.draw(context, elapsed, prefs.speed) }
   const tick = (now: number) => {
     frame = 0
     if (disposed) return
-    if (!animated() || prefs.mode !== "matrix" || !prefs.enabled) { status(); return }
+    if (!animated() || prefs.mode === "image" || !prefs.enabled) { status(); return }
     // Limit to 24fps. Text streaming and interaction retain priority.
     if (!previous || now - previous >= 1000 / 24) {
       const elapsed = previous ? (now - previous) / 1000 : 0
@@ -115,9 +117,16 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
 
   const refresh = () => {
     stop()
+    if (prefs.mode !== sceneMode) {
+      sceneMode = prefs.mode
+      scene = prefs.mode === "image" ? undefined : createScene(prefs.mode)
+      scene?.resize(width, height)
+      paintedFrames = 0; lastStatusTime = 0
+    }
+    layer.dataset.wallpaper = prefs.mode
     layer.hidden = !prefs.enabled
     layer.style.opacity = String(1 - clamp(prefs.dimming, 0, 100) / 100)
-    canvas.hidden = prefs.mode !== "matrix"
+    canvas.hidden = prefs.mode === "image"
     image.style.objectFit = still.style.objectFit = prefs.fit === "contain" ? "contain" : "cover"
     if (!prefs.enabled || prefs.mode !== "image") {
       image.hidden = still.hidden = true
@@ -141,7 +150,7 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
       }
       if (!animated()) freeze()
     }
-    if (prefs.enabled && prefs.mode === "matrix") {
+    if (prefs.enabled && prefs.mode !== "image") {
       paint(0)
       if (animated() && context && width && height) frame = requestAnimationFrame(tick)
     }
@@ -165,7 +174,7 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
     canvas.width = Math.round(width * ratio)
     canvas.height = Math.round(height * ratio)
     context?.setTransform(ratio, 0, 0, ratio, 0, 0)
-    rain.resize(width, height)
+    scene?.resize(width, height)
     refresh()
   })
   resize.observe(host)
@@ -186,6 +195,7 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
       reduced.removeEventListener("change", refresh)
       image.onload = image.onerror = null
       image.removeAttribute("src")
+      scene = undefined
       layer.remove()
       host.classList.remove("cw-host")
     },

@@ -1,9 +1,9 @@
 {
   "name": "opencode-conversation-wallpaper",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Local image wallpapers and Matrix rain for OpenCode V2 Desktop conversations",
+  "description": "An animated wallpaper collection and local image backgrounds for OpenCode V2 Desktop conversations",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dluc/opencode-conversation-wallpaper.git"

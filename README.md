@@ -1,16 +1,32 @@
 # Conversation wallpaper for OpenCode Desktop
 
-Local image backgrounds and Matrix-style digital rain, behind conversations only.
+A small collection of animated atmospheres and local image backgrounds, behind conversations only.
+
+## The collection
+
+| Wallpaper | Its motion |
+| --- | --- |
+| **Digital rain** | Green glyphs falling downward |
+| **Cloud Drift** | Soft silver-blue clouds drifting horizontally |
+| **Fireflies** | Warm glowing particles wandering freely |
+| **Starfield** | Quiet travel through depth, stars moving outward |
+| **Aurora** | Teal and violet ribbons flowing and undulating |
+| **Your image** | A still or animated local image, displayed as-is |
+
+Each built-in wallpaper defines its own movement; there is no direction control. Select one from the gallery,
+adjust dimming and animation speed, or pause it. Gallery thumbnails are stills, not extra animation loops.
 
 ## Features
 
 - Built-in green digital rain, enabled by default at 55% dimming with smooth movement between cells.
 - Import a local PNG, JPEG, GIF, WebP or AVIF (up to 8 MB). PNG/WebP animations are supported when Chromium decodes them.
-- Image fill/contain, dimming, rain speed, and pause controls with a live preview.
+- Image fill/contain, dimming, built-in animation speed, and pause controls with a live preview.
+- Uploaded stills stay still; animated GIF/WebP/PNG files play their own embedded animation. No artificial panning,
+  particles, or other motion is added, and speed controls are hidden for uploads.
 - Animated images are frozen using a canvas snapshot, not an ineffective CSS animation pause.
-- Honors system reduced motion by default, with an explicit opt-out. Rain stops and images freeze when the timeline or app document is hidden.
-- Live preview status explains pauses and reports actual painted rain frames. A **Make rain more visible** preset sets 40% dimming and 1.2× speed.
-- Canvas rain capped at 24 fps and 2× pixel density.
+- Honors system reduced motion by default, with an explicit opt-out. Built-ins stop and images freeze when the timeline or app document is hidden.
+- Live preview status explains pauses and reports actual painted frames. A **Make wallpaper more visible** preset sets 40% dimming and 1.2× speed.
+- Canvas effects capped at 24 fps and 2× pixel density. Cloud and firefly glow textures are cached; particle counts are bounded.
 - Settings persist across sessions and apply to all workspaces. No model calls, remote image requests, or uploads.
 - Command-palette actions to open settings, hide/show wallpaper, and pause/resume animation.
 
@@ -55,6 +71,16 @@ opencode plugin list
 opencode plugin update github:dluc/opencode-conversation-wallpaper
 ```
 
+Some CLI versions report **Plugin is not configured** during update despite showing the correct source in `plugin list`.
+If that happens, or if you previously pinned a commit, replace only the existing wallpaper entry in your global config with:
+
+```jsonc
+"github:dluc/opencode-conversation-wallpaper#v0.2.0"
+```
+
+Do not add it alongside the old entry. OpenCode watches the config and installs the new target automatically.
+The `v0.2.0` tag pins this release; replace the tag for future releases or remove it to track the repository default branch.
+
 For local development, configure an absolute path to a clone of this repository instead of the Git package.
 If you previously configured a local copy, remove that old entry before adding the Git package so only one copy loads.
 
@@ -62,8 +88,8 @@ OpenCode watches configuration changes. Look under **Settings → Conversation w
 **Conversation wallpaper settings** in the command palette. GUI availability can also be checked under
 **Settings → Extensions → Plugins**. This package has only a GUI entry; it adds no server tools or hooks.
 
-Choose **Your image → Choose image…** to import an image, or keep **Digital rain** for the Matrix effect.
-Try 35–55% dimming if the effect is too faint; increase it for quieter reading. A dark app theme suits digital rain best.
+Choose a built-in from the gallery, or **Your image → Choose image…** to import a file.
+Try 35–55% dimming if the effect is too faint; increase it for quieter reading. A dark app theme suits this collection best.
 
 ### Updating from 0.1.0 / faint or static rain
 
@@ -71,7 +97,7 @@ Try 35–55% dimming if the effect is too faint; increase it for quieter reading
 opencode plugin update github:dluc/opencode-conversation-wallpaper
 ```
 
-In **Settings → Conversation wallpaper**, choose **Make rain more visible**. Existing preferences are preserved
+In **Settings → Conversation wallpaper**, choose **Make wallpaper more visible**. Existing preferences are preserved
 when updating, so an old 75% dimming setting does not change until you adjust it or use the preset.
 
 The text below the preview tells you why motion is paused (manual pause, system Reduce motion, or hidden/offscreen),
@@ -136,10 +162,12 @@ Do not add install-time build scripts: the prebuilt package should be usable wit
 
 ### Verification scope
 
-Unit/DOM tests cover input restrictions, host detection, hidden/paused/disabled states, animation cleanup,
-image snapshots/errors/removal, and late-mounted/cached timelines. Chromium tests run the **real plugin setup
-and settings UI against a mock host**, checking painting, pause/resume, reduced motion, GIF import/freeze,
-file rejection, chat pointer/keyboard interaction, narrow layouts, and unloading/reloading. Screenshots are saved
+Unit/DOM tests cover all five renderers (motion, still frames, speed, resizing), input restrictions, host detection,
+hidden/paused/disabled states, animation cleanup, image snapshots/errors/removal, and late-mounted/cached timelines.
+Chromium tests run the **real plugin setup and settings UI against a mock host**, checking every animation,
+static gallery thumbnails, pause/resume, reduced motion, GIF import/freeze, unchanged still uploads, preserved uploads
+when switching modes, built-in-only speed controls, file rejection, chat pointer/keyboard interaction, narrow layouts,
+and unloading/reloading. Screenshots are saved
 to ignored `test-results/`.
 
 These are not a live OpenCode Desktop installation test. Verify the plugin in your actual app version before
