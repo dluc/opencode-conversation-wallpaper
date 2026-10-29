@@ -1,7 +1,7 @@
 import { Command, Plugin, SettingsPage, Slot, Store, Style } from "@opencode/plugin/gui"
 import { Schema } from "effect"
 import { createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js"
-import { defaults, MODES, validateImage, type BuiltinMode, type Preferences } from "./preferences"
+import { defaults, MAX_SPEED, MIN_SPEED, MODES, validateImage, type BuiltinMode, type Preferences } from "./preferences"
 import { collection, createScene } from "./scenes"
 import { mountWallpaper, statusMessage, watchTimelines, type WallpaperStatus } from "./wallpaper"
 import css from "./style.css?inline"
@@ -166,7 +166,7 @@ export default Plugin.define({
               })
             }}>Make wallpaper more visible</ui.Button>
             <label class="cw-range"><span>Animation speed <output>{prefs().speed.toFixed(1)}×</output></span>
-              <input type="range" aria-label="Animation speed" min="0.2" max="2" step="0.1" value={prefs().speed}
+              <input type="range" aria-label="Animation speed" min={MIN_SPEED} max={MAX_SPEED} step="0.1" value={prefs().speed}
                 onChange={(event) => change("speed", event.currentTarget.valueAsNumber)} />
             </label>
           </Show>

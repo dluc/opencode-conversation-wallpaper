@@ -19,6 +19,11 @@ try {
   }
   await page.waitForFunction(canvasPainted)
   await page.getByText(/Digital rain is animating/).waitFor()
+  const speed = page.getByRole("slider", { name: "Animation speed", exact: true })
+  assert.equal(await speed.getAttribute("max"), "4")
+  await speed.evaluate(input => { input.value = "4"; input.dispatchEvent(new Event("change", { bubbles: true })) })
+  assert.equal(await speed.inputValue(), "4")
+  await page.getByText("4.0×", { exact: true }).waitFor()
   await mkdir("test-results", { recursive: true })
   await page.screenshot({ path: "test-results/settings.png", fullPage: true })
   await page.locator(".cw-mode").screenshot({ path: "test-results/collection.png" })
@@ -61,6 +66,7 @@ try {
   assert.equal(await page.getByRole("radio", { name: /Cloud Drift/ }).isChecked(), true)
   for (const [mode, title] of [["clouds", "Cloud Drift"], ["fireflies", "Fireflies"], ["starfield", "Starfield"], ["aurora", "Aurora"]]) {
     await page.getByRole("radio", { name: new RegExp(title) }).check()
+    await speed.evaluate(input => { input.value = "4"; input.dispatchEvent(new Event("change", { bubbles: true })) })
     await page.getByText(new RegExp(`${title} is animating`)).waitFor()
     const frame = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())
     await page.waitForFunction(previous => document.querySelector(".cw-preview canvas").toDataURL() !== previous, frame)

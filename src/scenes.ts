@@ -1,4 +1,4 @@
-import { clamp, type BuiltinMode } from "./preferences"
+import { clamp, MAX_SPEED, MIN_SPEED, type BuiltinMode } from "./preferences"
 import { Rain } from "./rain"
 
 export type Appearance = "light" | "dark"
@@ -36,7 +36,7 @@ abstract class AmbientScene implements Scene {
   draw(ctx: CanvasRenderingContext2D, elapsed: number, speed: number, appearance: Appearance = "dark") {
     if (!this.width || !this.height) return
     this.appearance = appearance
-    const delta = clamp(elapsed, 0, 0.1) * clamp(speed, 0.2, 2)
+    const delta = clamp(elapsed, 0, 0.1) * clamp(speed, MIN_SPEED, MAX_SPEED)
     this.time += delta
     ctx.clearRect(0, 0, this.width, this.height)
     ctx.save()

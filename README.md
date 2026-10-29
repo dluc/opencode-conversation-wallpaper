@@ -35,7 +35,7 @@ OpenCode Desktop installation. Your theme, fonts, and dimming setting may look d
 
 - Built-in green digital rain, enabled by default at 55% dimming with smooth movement between cells.
 - Import a local PNG, JPEG, GIF, WebP or AVIF (up to 8 MB). PNG/WebP animations are supported when Chromium decodes them.
-- Image fill/contain, dimming, built-in animation speed, and pause controls with a live preview.
+- Image fill/contain, dimming, built-in animation speed from **0.2× to 4×**, and pause controls with a live preview.
 - Uploaded stills stay still; animated GIF/WebP/PNG files play their own embedded animation. No artificial panning,
   particles, or other motion is added, and speed controls are hidden for uploads.
 - Animated images are frozen using a canvas snapshot, not an ineffective CSS animation pause.
@@ -57,7 +57,7 @@ Already installed? Use [Upgrade an existing installation](#upgrade-an-existing-i
 Run this on the **computer running OpenCode Desktop**, not only a remote workspace server:
 
 ```sh
-opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.2.1'
+opencode plugin add github:dluc/opencode-conversation-wallpaper
 ```
 
 This uses OpenCode's standard Git-package installer and updates your global plugin configuration while preserving
@@ -65,7 +65,7 @@ other entries. The repository is private: your computer needs Git credentials wi
 `gh auth login` followed by `gh auth setup-git`). An SSH alternative is:
 
 ```sh
-opencode plugin add 'git+ssh://git@github.com/dluc/opencode-conversation-wallpaper.git#v0.2.1'
+opencode plugin add 'git+ssh://git@github.com/dluc/opencode-conversation-wallpaper.git#main'
 ```
 
 The repository includes the prebuilt `dist/gui-experimental.cjs`. No local build or npm runtime dependencies are
@@ -79,7 +79,7 @@ Alternatively, add the Git package to the existing `plugins` array in your **glo
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
-    "github:dluc/opencode-conversation-wallpaper#v0.2.1"
+    "github:dluc/opencode-conversation-wallpaper"
   ]
 }
 ```
@@ -93,50 +93,62 @@ Try 35–55% dimming if the effect is too faint; increase it for quieter reading
 
 ## Upgrade an existing installation
 
-**For a pinned installation, changing the revision is the upgrade.** The update command does not move a commit pin
-or version tag to a different release.
-
-In your existing global configuration, replace only the wallpaper entry with:
-
-```jsonc
-"github:dluc/opencode-conversation-wallpaper#v0.2.1"
-```
-
-Do not add it alongside the old entry, and preserve your other plugins/settings. OpenCode watches the config and installs
-the new target automatically; no service restart is needed. This also upgrades older commit-pinned installations.
-
-Check that the `SOURCE` column contains `#v0.2.1`:
+**Use the CLI; no manual config editing is required.** First check the configured source:
 
 ```sh
 opencode plugin list
 ```
 
-### Branch-tracking installations
-
-If you prefer standard updates from the repository's default branch, configure the unpinned source
-`"github:dluc/opencode-conversation-wallpaper"` instead. Once `plugin list` shows that exact source, run from the same directory:
+If the wallpaper's `SOURCE` is already `github:dluc/opencode-conversation-wallpaper`, update it directly:
 
 ```sh
 opencode plugin update 'github:dluc/opencode-conversation-wallpaper'
 ```
 
-The target must match the **entire SOURCE string**, including any `#main`, tag, or commit suffix. An unqualified command
-does not match an entry ending in `#v0.2.1`. **No plugin updates available** is a normal result when already current.
+### One-time switch from a pinned installation
+
+Earlier instructions used commit or release pins. `plugin update` does not move such a pin to a different release.
+To switch to normal updates, remove the **exact SOURCE shown by `plugin list`**, then add the unpinned source.
+
+For example, **only if your SOURCE ends in `#v0.2.1`**:
+
+```sh
+opencode plugin remove 'github:dluc/opencode-conversation-wallpaper#v0.2.1'
+opencode plugin add github:dluc/opencode-conversation-wallpaper
+```
+
+If yours ends in `#v0.2.0`, an older commit hash, or another suffix, use that exact source in the remove command instead.
+Do not add the new source until the old entry has been removed. The remove command changes configuration only—it does
+not erase the plugin's stored settings or images. Other plugin entries are preserved. No service restart is needed.
+
+Once `plugin list` shows the unpinned source, all future updates use:
+
+```sh
+opencode plugin update github:dluc/opencode-conversation-wallpaper
+```
+
+For SSH/`#main` installations, pass the entire SOURCE string instead. **No plugin updates available** is a normal result
+when already current. The target must match exactly; an unqualified command does not match an entry ending in `#v0.2.1`.
 
 OpenCode v2.2.2 also has a cold-inventory race: `plugin list` may initially be empty, and update/check may report
 **Plugin is not configured** while the background service is still loading plugins. Wait until `plugin list` shows the
 wallpaper, then retry using its exact source from the same working directory. Repeated failure after that needs separate
 CLI/service investigation; do not delete app data or keep adding duplicate entries.
 
-The pinned-release migration and a genuine old-to-new Git-branch upgrade were tested with the native v2.2.2 Linux CLI
-using isolated config/data/cache/state. This is separate from the mock-host browser tests below, not a macOS Desktop test.
+The CLI-only remove/add migration, preservation of unrelated config/comments, and a genuine old-to-new Git-branch upgrade
+were tested with the native v2.2.2 Linux CLI using isolated config/data/cache/state. This is separate from the mock-host
+browser tests below, not a macOS Desktop test.
+
+To deliberately pin a release for reproducibility, new installations can use
+`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.2.2'`. To change an existing pin, use the same remove/add
+procedure with the exact old and new targets—not `plugin update` and not a second duplicate entry.
 
 For local development, configure an absolute path to a clone of this repository instead of the Git package.
 If you previously configured a local copy, remove that old entry before adding the Git package so only one copy loads.
 
 ### Updating from 0.1.0 / faint or static rain
 
-Follow the pinned-release upgrade above, or use the exact source for a branch-tracking install.
+Use the one-time CLI migration above if pinned, or update the exact source for a branch-tracking install.
 
 In **Settings → Conversation wallpaper**, choose **Make wallpaper more visible**. Existing preferences are preserved
 when updating, so an old 75% dimming setting does not change until you adjust it or use the preset.
@@ -155,7 +167,7 @@ in the conversation. Do not remove theme overlays or lower message opacity to co
 To disable the entire GUI, use its switch in **Settings → Extensions → Plugins**. To uninstall:
 
 ```sh
-opencode plugin remove 'github:dluc/opencode-conversation-wallpaper#v0.2.1'
+opencode plugin remove github:dluc/opencode-conversation-wallpaper
 ```
 
 Use the exact configured source if yours differs. Alternatively, remove only this plugin's entry from your global
@@ -223,3 +235,13 @@ npm run docs:screenshots
 ```
 
 Use the same `CHROME_BIN` override as the browser tests if Chromium is already installed. No external images or assets are downloaded.
+
+To rerun the native CLI-only migration check, with Git credentials for this private repository:
+
+```sh
+npm run test:cli
+```
+
+Set `OPENCODE_TEST_BIN` to an absolute CLI executable path if `opencode` is not on PATH. The test uses fresh directories
+under ignored `test-results/`, preserves Git credentials for downloading the private package, and stops only its own
+isolated service. It never changes your active OpenCode configuration. It checks remove/add and update, not Desktop rendering.

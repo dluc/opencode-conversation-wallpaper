@@ -1,4 +1,4 @@
-import { clamp } from "./preferences"
+import { clamp, MAX_SPEED, MIN_SPEED } from "./preferences"
 
 const glyphs = "アイウエオカキクケコサシスセソタチツテトナニヌネノ012345789Z<>:+=*"
 const cell = 20
@@ -23,7 +23,7 @@ export class Rain {
   }
 
   draw(ctx: CanvasRenderingContext2D, elapsed: number, speed: number) {
-    const delta = clamp(elapsed, 0, 0.1) * clamp(speed, 0.2, 2)
+    const delta = clamp(elapsed, 0, 0.1) * clamp(speed, MIN_SPEED, MAX_SPEED)
     this.time += delta
     ctx.clearRect(0, 0, this.width, this.height)
     ctx.font = `15px ui-monospace, monospace`

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 import { collection, createScene, wallpaperName } from "../src/scenes"
+import { MAX_SPEED } from "../src/preferences"
 import { drawing } from "./environment"
 
 const context = drawing as unknown as CanvasRenderingContext2D
@@ -51,6 +52,21 @@ describe("wallpaper collection", () => {
     expect(wallpaperName("image")).toBe("Your image")
   })
   for (const entry of collection) {
+    it(`${entry.title} really runs at 4x instead of silently clamping at 2x`, () => {
+      const random = vi.spyOn(Math, "random").mockReturnValue(0.5)
+      try {
+        const standard = createScene(entry.id), maximum = createScene(entry.id)
+        standard.resize(800, 600); maximum.resize(800, 600)
+        standard.draw(context, 0, 1); maximum.draw(context, 0, 1)
+        clearCommands()
+        standard.draw(context, 0.1, 1)
+        const normal = commands()
+        clearCommands()
+        expect(MAX_SPEED).toBe(4)
+        maximum.draw(context, 0.025, MAX_SPEED)
+        expect(commands()).toEqual(normal)
+      } finally { random.mockRestore() }
+    })
     it(`${entry.title} paints a stable still frame and advances with elapsed time`, () => {
       const random = vi.spyOn(Math, "random").mockReturnValue(0.5)
       try {
