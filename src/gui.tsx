@@ -22,6 +22,7 @@ export default Plugin.define({
   stores: { preferences: Store.global(PreferencesSchema, defaults) },
   setup(ctx) {
     ctx.add(Style, css)
+    const appearance = () => ctx.appearance.mode()
     // Read every field before passing preferences into imperative rendering. Its
     // short-circuit branches must not decide which store changes effects track.
     const prefs = (): Preferences => ({
@@ -42,8 +43,8 @@ export default Plugin.define({
     // hide their header, so do not depend on session.header to discover them.
     function TimelineBridge() {
       onMount(() => {
-        const controller = watchTimelines(prefs, reportError)
-        createEffect(() => { prefs(); controller.update() })
+        const controller = watchTimelines(prefs, reportError, appearance)
+        createEffect(() => { prefs(); appearance(); controller.update() })
         onCleanup(controller.dispose)
       })
       return null
@@ -58,17 +59,17 @@ export default Plugin.define({
         const scene = createScene(props.mode)
         scene.resize(canvas.width, canvas.height)
         // Gallery thumbnails are stills. Only the selected wallpaper has an animation loop.
-        scene.draw(context, 0, 1)
+        createEffect(() => { scene.draw(context, 0, 1, appearance()) })
       })
-      return <canvas ref={canvas} class="cw-thumbnail" width="300" height="120" aria-hidden="true" />
+      return <canvas ref={canvas} class="cw-thumbnail" classList={{ "cw-light": appearance() === "light" }} width="300" height="120" aria-hidden="true" />
     }
 
     function Preview() {
       let host!: HTMLDivElement
       const [status, setStatus] = createSignal<WallpaperStatus>()
       onMount(() => {
-        const wallpaper = mountWallpaper(host, prefs(), reportError, setStatus)
-        createEffect(() => { wallpaper.update(prefs()) })
+        const wallpaper = mountWallpaper(host, prefs(), reportError, setStatus, appearance())
+        createEffect(() => { wallpaper.update(prefs(), appearance()) })
         onCleanup(wallpaper.dispose)
       })
       return <><div ref={host} class="cw-preview" aria-label="Wallpaper preview">

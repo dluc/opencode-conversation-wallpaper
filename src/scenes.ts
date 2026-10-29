@@ -1,9 +1,11 @@
 import { clamp, type BuiltinMode } from "./preferences"
 import { Rain } from "./rain"
 
+export type Appearance = "light" | "dark"
+
 export interface Scene {
   resize(width: number, height: number): void
-  draw(ctx: CanvasRenderingContext2D, elapsed: number, speed: number): void
+  draw(ctx: CanvasRenderingContext2D, elapsed: number, speed: number, appearance?: Appearance): void
 }
 
 export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; description: string }> = [
@@ -23,6 +25,7 @@ abstract class AmbientScene implements Scene {
   protected width = 0
   protected height = 0
   protected time = 0
+  protected appearance: Appearance = "dark"
 
   resize(width: number, height: number) {
     this.width = Math.max(0, width)
@@ -30,8 +33,9 @@ abstract class AmbientScene implements Scene {
     this.layout()
   }
   protected layout() {}
-  draw(ctx: CanvasRenderingContext2D, elapsed: number, speed: number) {
+  draw(ctx: CanvasRenderingContext2D, elapsed: number, speed: number, appearance: Appearance = "dark") {
     if (!this.width || !this.height) return
+    this.appearance = appearance
     const delta = clamp(elapsed, 0, 0.1) * clamp(speed, 0.2, 2)
     this.time += delta
     ctx.clearRect(0, 0, this.width, this.height)
@@ -61,6 +65,7 @@ function glowSprite(size: number, color: string): HTMLCanvasElement {
 
 class CloudDrift extends AmbientScene {
   private sprite: HTMLCanvasElement | undefined
+  private spriteAppearance: Appearance | undefined
   private clouds = Array.from({ length: 7 }, (_, i) => ({
     x: i / 7 * 1.6,
     y: 0.08 + (i * 0.173 % 0.62),
@@ -69,7 +74,10 @@ class CloudDrift extends AmbientScene {
   }))
 
   protected paint(ctx: CanvasRenderingContext2D) {
-    if (!this.sprite) {
+    if (!this.sprite || this.spriteAppearance !== this.appearance) {
+      this.spriteAppearance = this.appearance
+      const light = this.appearance === "light"
+      const color = light ? "35, 65, 95" : "176, 204, 235"
       // Overlapping wisps make one reusable, asymmetric cloud texture.
       this.sprite = document.createElement("canvas")
       this.sprite.width = 480; this.sprite.height = 180
@@ -78,9 +86,9 @@ class CloudDrift extends AmbientScene {
         for (let i = 0; i < 7; i++) {
           const x = 35 + i * 66, y = 90 + Math.sin(i * 1.7) * 17
           const gradient = spriteCtx.createRadialGradient(x, y, 15, x, y, 100)
-          gradient.addColorStop(0, "rgba(176, 204, 235, 0.22)")
-          gradient.addColorStop(0.55, "rgba(176, 204, 235, 0.12)")
-          gradient.addColorStop(1, "rgba(176, 204, 235, 0)")
+          gradient.addColorStop(0, `rgba(${color}, ${light ? 0.34 : 0.22})`)
+          gradient.addColorStop(0.55, `rgba(${color}, ${light ? 0.19 : 0.12})`)
+          gradient.addColorStop(1, `rgba(${color}, 0)`)
           spriteCtx.fillStyle = gradient
           spriteCtx.fillRect(0, 0, 480, 180)
         }
@@ -109,6 +117,7 @@ class CloudDrift extends AmbientScene {
 interface Mote { x: number; y: number; phase: number; size: number }
 class Fireflies extends AmbientScene {
   private sprite: HTMLCanvasElement | undefined
+  private spriteAppearance: Appearance | undefined
   private motes: Mote[] = []
   protected layout() {
     const count = Math.round(clamp(this.width * this.height / 22000, 18, 60))
@@ -118,15 +127,20 @@ class Fireflies extends AmbientScene {
     }))
   }
   protected paint(ctx: CanvasRenderingContext2D) {
-    this.sprite ??= glowSprite(64, "216, 241, 117")
+    const light = this.appearance === "light"
+    if (!this.sprite || this.spriteAppearance !== this.appearance) {
+      this.spriteAppearance = this.appearance
+      this.sprite = glowSprite(64, light ? "163, 101, 15" : "216, 241, 117")
+    }
     for (const mote of this.motes) {
       const x = (mote.x + Math.sin(this.time * 0.17 + mote.phase) * 0.07 + Math.cos(this.time * 0.09 + mote.phase) * 0.025) * this.width
       const y = (mote.y + Math.cos(this.time * 0.13 + mote.phase) * 0.08) * this.height
-      const glow = 0.6 + Math.sin(this.time * 0.6 + mote.phase) * 0.25
+      const glow = light ? 0.7 + Math.sin(this.time * 0.6 + mote.phase) * 0.15
+        : 0.6 + Math.sin(this.time * 0.6 + mote.phase) * 0.25
       const halo = 22 + mote.size * 11
       ctx.globalAlpha = glow
       ctx.drawImage(this.sprite, x - halo / 2, y - halo / 2, halo, halo)
-      ctx.fillStyle = "#edf8b1"
+      ctx.fillStyle = light ? "#945308" : "#edf8b1"
       ctx.beginPath(); ctx.arc(x, y, mote.size, 0, Math.PI * 2); ctx.fill()
     }
   }
@@ -142,6 +156,7 @@ class Starfield extends AmbientScene {
     }))
   }
   protected paint(ctx: CanvasRenderingContext2D, delta: number) {
+    const light = this.appearance === "light"
     for (const star of this.stars) {
       star.depth -= delta * 0.035
       if (star.depth < 0.12) star.depth += 1.08
@@ -149,11 +164,11 @@ class Starfield extends AmbientScene {
       const y = this.height * (0.5 + star.y / star.depth)
       if (x < -5 || x > this.width + 5 || y < -5 || y > this.height + 5) continue
       const near = 1 - star.depth / 1.2
-      ctx.globalAlpha = 0.3 + near * 0.7
-      ctx.fillStyle = "#d8eaff"
-      ctx.beginPath(); ctx.arc(x, y, 0.55 + near * 1.2, 0, Math.PI * 2); ctx.fill()
+      ctx.globalAlpha = light ? 0.5 + near * 0.5 : 0.3 + near * 0.7
+      ctx.fillStyle = light ? "#254466" : "#d8eaff"
+      ctx.beginPath(); ctx.arc(x, y, light ? 0.85 + near * 1.35 : 0.55 + near * 1.2, 0, Math.PI * 2); ctx.fill()
       if (near > 0.65) {
-        ctx.strokeStyle = "#94b6e0"; ctx.lineWidth = 0.6
+        ctx.strokeStyle = light ? "#536a83" : "#94b6e0"; ctx.lineWidth = 0.6
         ctx.beginPath()
         ctx.moveTo(this.width * (0.5 + star.x / (star.depth + 0.008)), this.height * (0.5 + star.y / (star.depth + 0.008)))
         ctx.lineTo(x, y); ctx.stroke()

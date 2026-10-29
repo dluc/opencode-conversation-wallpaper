@@ -2,6 +2,10 @@
 
 A small collection of animated atmospheres and local image backgrounds, behind conversations only.
 
+[Install](#install) · [Upgrade an existing installation](#upgrade-an-existing-installation) · [Development](#development)
+
+![Wallpaper gallery: Digital rain, Cloud Drift, Fireflies, Starfield, Aurora, and Your image](docs/images/collection.png)
+
 ## The collection
 
 | Wallpaper | Its motion |
@@ -16,6 +20,17 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 Each built-in wallpaper defines its own movement; there is no direction control. Select one from the gallery,
 adjust dimming and animation speed, or pause it. Gallery thumbnails are stills, not extra animation loops.
 
+### A few moods
+
+| Aurora · dark theme | Fireflies · dark theme |
+| --- | --- |
+| ![Teal and violet aurora ribbons behind readable conversation text in dark mode](docs/images/aurora-dark.png) | ![Soft golden-green fireflies in dark mode](docs/images/fireflies-dark.png) |
+| **Cloud Drift · light theme** | **Starfield · light theme** |
+| ![Soft blue-gray clouds behind dark text on a light background](docs/images/clouds-light.png) | ![Ink-blue stars visible behind conversation text in light mode](docs/images/starfield-light.png) |
+
+These are real renderer captures from the mock desktop test layout, paused for screenshots—not screenshots of a live
+OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All five built-ins animate.
+
 ## Features
 
 - Built-in green digital rain, enabled by default at 55% dimming with smooth movement between cells.
@@ -27,6 +42,9 @@ adjust dimming and animation speed, or pause it. Gallery thumbnails are stills, 
 - Honors system reduced motion by default, with an explicit opt-out. Built-ins stop and images freeze when the timeline or app document is hidden.
 - Live preview status explains pauses and reports actual painted frames. A **Make wallpaper more visible** preset sets 40% dimming and 1.2× speed.
 - Canvas effects capped at 24 fps and 2× pixel density. Cloud and firefly glow textures are cached; particle counts are bounded.
+- Clouds, fireflies, and stars automatically adapt to the app's light or dark appearance. Light mode uses blue-gray mist,
+  amber fireflies, and ink-blue stars; the original dark palettes are preserved. Paused wallpapers and gallery thumbnails
+  repaint when you switch themes, while uploaded images keep their original colors.
 - Settings persist across sessions and apply to all workspaces. No model calls, remote image requests, or uploads.
 - Command-palette actions to open settings, hide/show wallpaper, and pause/resume animation.
 
@@ -34,10 +52,12 @@ adjust dimming and animation speed, or pause it. Gallery thumbnails are stills, 
 
 Targets **OpenCode V2 Desktop**, developed against `@opencode/plugin` **2.2.2**. The GUI plugin API is experimental.
 
+Already installed? Use [Upgrade an existing installation](#upgrade-an-existing-installation) instead of adding a second revision.
+
 Run this on the **computer running OpenCode Desktop**, not only a remote workspace server:
 
 ```sh
-opencode plugin add github:dluc/opencode-conversation-wallpaper
+opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.2.1'
 ```
 
 This uses OpenCode's standard Git-package installer and updates your global plugin configuration while preserving
@@ -45,7 +65,7 @@ other entries. The repository is private: your computer needs Git credentials wi
 `gh auth login` followed by `gh auth setup-git`). An SSH alternative is:
 
 ```sh
-opencode plugin add 'git+ssh://git@github.com/dluc/opencode-conversation-wallpaper.git#main'
+opencode plugin add 'git+ssh://git@github.com/dluc/opencode-conversation-wallpaper.git#v0.2.1'
 ```
 
 The repository includes the prebuilt `dist/gui-experimental.cjs`. No local build or npm runtime dependencies are
@@ -59,43 +79,64 @@ Alternatively, add the Git package to the existing `plugins` array in your **glo
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
-    "github:dluc/opencode-conversation-wallpaper"
+    "github:dluc/opencode-conversation-wallpaper#v0.2.1"
   ]
 }
 ```
-
-To check or update the installed version:
-
-```sh
-opencode plugin list
-opencode plugin update github:dluc/opencode-conversation-wallpaper
-```
-
-Some CLI versions report **Plugin is not configured** during update despite showing the correct source in `plugin list`.
-If that happens, or if you previously pinned a commit, replace only the existing wallpaper entry in your global config with:
-
-```jsonc
-"github:dluc/opencode-conversation-wallpaper#v0.2.0"
-```
-
-Do not add it alongside the old entry. OpenCode watches the config and installs the new target automatically.
-The `v0.2.0` tag pins this release; replace the tag for future releases or remove it to track the repository default branch.
-
-For local development, configure an absolute path to a clone of this repository instead of the Git package.
-If you previously configured a local copy, remove that old entry before adding the Git package so only one copy loads.
 
 OpenCode watches configuration changes. Look under **Settings → Conversation wallpaper**, or find
 **Conversation wallpaper settings** in the command palette. GUI availability can also be checked under
 **Settings → Extensions → Plugins**. This package has only a GUI entry; it adds no server tools or hooks.
 
 Choose a built-in from the gallery, or **Your image → Choose image…** to import a file.
-Try 35–55% dimming if the effect is too faint; increase it for quieter reading. A dark app theme suits this collection best.
+Try 35–55% dimming if the effect is too faint; increase it for quieter reading.
+
+## Upgrade an existing installation
+
+**For a pinned installation, changing the revision is the upgrade.** The update command does not move a commit pin
+or version tag to a different release.
+
+In your existing global configuration, replace only the wallpaper entry with:
+
+```jsonc
+"github:dluc/opencode-conversation-wallpaper#v0.2.1"
+```
+
+Do not add it alongside the old entry, and preserve your other plugins/settings. OpenCode watches the config and installs
+the new target automatically; no service restart is needed. This also upgrades older commit-pinned installations.
+
+Check that the `SOURCE` column contains `#v0.2.1`:
+
+```sh
+opencode plugin list
+```
+
+### Branch-tracking installations
+
+If you prefer standard updates from the repository's default branch, configure the unpinned source
+`"github:dluc/opencode-conversation-wallpaper"` instead. Once `plugin list` shows that exact source, run from the same directory:
+
+```sh
+opencode plugin update 'github:dluc/opencode-conversation-wallpaper'
+```
+
+The target must match the **entire SOURCE string**, including any `#main`, tag, or commit suffix. An unqualified command
+does not match an entry ending in `#v0.2.1`. **No plugin updates available** is a normal result when already current.
+
+OpenCode v2.2.2 also has a cold-inventory race: `plugin list` may initially be empty, and update/check may report
+**Plugin is not configured** while the background service is still loading plugins. Wait until `plugin list` shows the
+wallpaper, then retry using its exact source from the same working directory. Repeated failure after that needs separate
+CLI/service investigation; do not delete app data or keep adding duplicate entries.
+
+The pinned-release migration and a genuine old-to-new Git-branch upgrade were tested with the native v2.2.2 Linux CLI
+using isolated config/data/cache/state. This is separate from the mock-host browser tests below, not a macOS Desktop test.
+
+For local development, configure an absolute path to a clone of this repository instead of the Git package.
+If you previously configured a local copy, remove that old entry before adding the Git package so only one copy loads.
 
 ### Updating from 0.1.0 / faint or static rain
 
-```sh
-opencode plugin update github:dluc/opencode-conversation-wallpaper
-```
+Follow the pinned-release upgrade above, or use the exact source for a branch-tracking install.
 
 In **Settings → Conversation wallpaper**, choose **Make wallpaper more visible**. Existing preferences are preserved
 when updating, so an old 75% dimming setting does not change until you adjust it or use the preset.
@@ -114,10 +155,11 @@ in the conversation. Do not remove theme overlays or lower message opacity to co
 To disable the entire GUI, use its switch in **Settings → Extensions → Plugins**. To uninstall:
 
 ```sh
-opencode plugin remove github:dluc/opencode-conversation-wallpaper
+opencode plugin remove 'github:dluc/opencode-conversation-wallpaper#v0.2.1'
 ```
 
-Alternatively, remove only this plugin's entry from your global configuration. The extension removes its layers, styles, listeners,
+Use the exact configured source if yours differs. Alternatively, remove only this plugin's entry from your global
+configuration. The extension removes its layers, styles, listeners,
 observers, and animation frames when unloaded. Stored preferences/images may remain in app storage.
 
 ## Privacy and limitations
@@ -129,7 +171,7 @@ observers, and animation frames when unloaded. Stored preferences/images may rem
 - Reduced motion (unless explicitly opted out) and **Pause animation** override image animation. Resuming a GIF may restart it.
   Paused snapshots are capped at 2048 pixels on their longest edge to bound memory use.
 - The documented `Style` API supplies CSS, but OpenCode does not offer a dedicated timeline-background slot.
-  `src/wallpaper.ts` isolates the necessary internal DOM integration: it finds `session-timeline-scroll` only when
+  An isolated layout adapter finds `session-timeline-scroll` only when
   its parent also has the expected `session-timeline-visible` sibling. Unknown layouts are left untouched rather
   than painting the whole app. Future OpenCode releases may require an adapter update.
 - Dimming changes wallpaper opacity only; it does not lower message opacity or replace theme colors.
@@ -167,8 +209,17 @@ hidden/paused/disabled states, animation cleanup, image snapshots/errors/removal
 Chromium tests run the **real plugin setup and settings UI against a mock host**, checking every animation,
 static gallery thumbnails, pause/resume, reduced motion, GIF import/freeze, unchanged still uploads, preserved uploads
 when switching modes, built-in-only speed controls, file rejection, chat pointer/keyboard interaction, narrow layouts,
-and unloading/reloading. Screenshots are saved
+and unloading/reloading. Light-mode checks measure the canvas pixels composited over white at 55% dimming, including
+theme changes while running and paused, and restoration of the original dark frames. Screenshots are saved
 to ignored `test-results/`.
 
 These are not a live OpenCode Desktop installation test. Verify the plugin in your actual app version before
 relying on compatibility. No global OpenCode configuration is modified by the tests or build.
+
+Refresh the five checked-in README images only after the browser checks succeed:
+
+```sh
+npm run docs:screenshots
+```
+
+Use the same `CHROME_BIN` override as the browser tests if Chromium is already installed. No external images or assets are downloaded.

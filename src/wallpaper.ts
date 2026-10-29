@@ -1,8 +1,8 @@
 import { clamp, imageSource, type Preferences } from "./preferences"
-import { createScene, wallpaperName } from "./scenes"
+import { createScene, wallpaperName, type Appearance } from "./scenes"
 
 export interface Wallpaper {
-  update(preferences: Preferences): void
+  update(preferences: Preferences, appearance?: Appearance): void
   dispose(): void
 }
 
@@ -39,7 +39,7 @@ export function timelineHost(scroll: Element): HTMLElement | undefined {
 }
 
 export function mountWallpaper(host: HTMLElement, initial: Preferences, reportError: (message: string) => void,
-  reportStatus?: (status: WallpaperStatus) => void): Wallpaper {
+  reportStatus?: (status: WallpaperStatus) => void, initialAppearance: Appearance = "dark"): Wallpaper {
   const layer = document.createElement("div")
   layer.className = "cw-layer"
   layer.setAttribute("aria-hidden", "true")
@@ -54,6 +54,7 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
   const context = canvas.getContext("2d")
   const reduced = matchMedia("(prefers-reduced-motion: reduce)")
   let prefs = initial
+  let appearance = initialAppearance
   let sceneMode = initial.mode
   let scene = initial.mode === "image" ? undefined : createScene(initial.mode)
   let visible = false
@@ -81,7 +82,7 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
     reportStatus?.({ reason, name: wallpaperName(prefs.mode), frames: paintedFrames, width, height, opacity: 1 - clamp(prefs.dimming, 0, 100) / 100 })
   }
   const stop = () => { cancelAnimationFrame(frame); frame = 0; previous = 0 }
-  const paint = (elapsed: number) => { if (context) scene?.draw(context, elapsed, prefs.speed) }
+  const paint = (elapsed: number) => { if (context) scene?.draw(context, elapsed, prefs.speed, appearance) }
   const tick = (now: number) => {
     frame = 0
     if (disposed) return
@@ -124,6 +125,7 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
       paintedFrames = 0; lastStatusTime = 0
     }
     layer.dataset.wallpaper = prefs.mode
+    layer.dataset.appearance = appearance
     layer.hidden = !prefs.enabled
     layer.style.opacity = String(1 - clamp(prefs.dimming, 0, 100) / 100)
     canvas.hidden = prefs.mode === "image"
@@ -185,7 +187,7 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
   refresh()
 
   return {
-    update(next) { prefs = next; refresh() },
+    update(next, nextAppearance = appearance) { prefs = next; appearance = nextAppearance; refresh() },
     dispose() {
       disposed = true
       stop()
@@ -203,7 +205,8 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
 }
 
 /** Cached timelines are independent; observe topology, not streamed text mutations. */
-export function watchTimelines(getPreferences: () => Preferences, reportError: (message: string) => void) {
+export function watchTimelines(getPreferences: () => Preferences, reportError: (message: string) => void,
+  getAppearance: () => Appearance = () => "dark") {
   const mounted = new Map<HTMLElement, Wallpaper>()
   let pending = 0
   const scan = () => {
@@ -215,7 +218,7 @@ export function watchTimelines(getPreferences: () => Preferences, reportError: (
     }
     document.querySelectorAll(TIMELINE_SELECTOR).forEach((scroll) => {
       const host = timelineHost(scroll)
-      if (host && !mounted.has(host)) mounted.set(host, mountWallpaper(host, getPreferences(), reportError))
+      if (host && !mounted.has(host)) mounted.set(host, mountWallpaper(host, getPreferences(), reportError, undefined, getAppearance()))
     })
   }
   const relevant = (node: Node) => node instanceof Element &&
@@ -228,7 +231,7 @@ export function watchTimelines(getPreferences: () => Preferences, reportError: (
   observer.observe(document.body, { childList: true, subtree: true })
   scan()
   return {
-    update() { for (const wallpaper of mounted.values()) wallpaper.update(getPreferences()) },
+    update() { for (const wallpaper of mounted.values()) wallpaper.update(getPreferences(), getAppearance()) },
     dispose() {
       observer.disconnect()
       cancelAnimationFrame(pending)

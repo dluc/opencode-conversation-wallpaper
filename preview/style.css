@@ -21,3 +21,7 @@ article p { font-size: 15px; line-height: 1.7; }
 article h1 { font-size: 30px; font-weight: 500; letter-spacing: -.04em; }
 pre { background: #171d19; border: 1px solid #2c362f; border-radius: 8px; padding: 20px; font-size: 13px; line-height: 1.8; }
 textarea { display: block; width: calc(100% - 32px); margin: 16px; min-height: 80px; background: #1b221e; border: 1px solid #354239; border-radius: 8px; color: inherit; padding: 16px; font: inherit; resize: vertical; }
+[data-appearance="light"] { color-scheme: light; --v2-background-bg-base: #fdfefd; --v2-text-text-base: #25332a; --v2-border-border-base: #ccd5ce; background: #f3f6f3; color: #25332a; }
+[data-appearance="light"] button { background: #e6ece7; border-color: #b7c4ba; }
+[data-appearance="light"] .test-conversation { background: #fdfefd; border-color: #ccd5ce; }
+[data-appearance="light"] :is(pre, textarea) { background: #eef3ef; border-color: #c3d0c6; }

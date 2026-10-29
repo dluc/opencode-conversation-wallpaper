@@ -12,6 +12,21 @@ function timeline() {
 }
 
 describe("wallpaper lifecycle", () => {
+  it("repaints a paused wallpaper when the app theme changes without enabling motion", () => {
+    const host = timeline()
+    const prefs = { ...defaults, mode: "starfield" as const, paused: true }
+    const controller = mountWallpaper(host, prefs, vi.fn(), undefined, "dark")
+    intersect(true)
+    expect(drawing.fillStyle).toBe("#d8eaff")
+    controller.update(prefs, "light")
+    expect(drawing.fillStyle).toBe("#254466")
+    expect(host.querySelector<HTMLElement>(".cw-layer")!.dataset.appearance).toBe("light")
+    expect(frames.size).toBe(0)
+    controller.update(prefs, "dark")
+    expect(drawing.fillStyle).toBe("#d8eaff")
+    expect(frames.size).toBe(0)
+    controller.dispose()
+  })
   for (const entry of collection) {
     it(`${entry.title} uses the shared animation lifecycle and does not animate uploads`, () => {
       const host = timeline(), report = vi.fn()

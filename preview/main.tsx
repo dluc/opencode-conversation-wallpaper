@@ -1,4 +1,4 @@
-import { createRoot, createSignal, onCleanup, Show, type JSX } from "solid-js"
+import { createEffect, createRoot, createSignal, onCleanup, Show, type JSX } from "solid-js"
 import { createStore } from "solid-js/store"
 import { render } from "solid-js/web"
 import definition from "../src/gui"
@@ -11,6 +11,8 @@ function TestHost() {
   const [prefs, setPrefs] = createStore<Preferences>({ ...defaults })
   const [settings, setSettings] = createSignal(true)
   const [enabled, setEnabled] = createSignal(true)
+  const [appearance, setAppearance] = createSignal<"light" | "dark">("dark")
+  createEffect(() => { document.documentElement.dataset.appearance = appearance() })
   const [page, setPage] = createSignal<() => JSX.Element>()
   const [bridge, setBridge] = createSignal<() => JSX.Element>()
   const [notice, setNotice] = createSignal("")
@@ -31,6 +33,7 @@ function TestHost() {
       },
       toast: { show: (value: { description: string }) => setNotice(value.description) },
       layout: { settings: () => setSettings(true) },
+      appearance: { mode: appearance },
       ui: {
         Switch: (props: { checked: boolean; onChange(value: boolean): void; label: string; description?: string }) => <label class="test-switch"><span><strong>{props.label}</strong><small>{props.description}</small></span><input type="checkbox" checked={props.checked} onChange={(event) => props.onChange(event.currentTarget.checked)} /></label>,
         Button: (props: { children: JSX.Element; onClick?(): void; busy?: boolean }) => <button disabled={props.busy} onClick={props.onClick}>{props.children}</button>,
@@ -44,6 +47,9 @@ function TestHost() {
   return <>
     <header class="test-toolbar"><strong>WALLPAPER / TEST HOST</strong>
       <button onClick={() => setSettings(!settings())}>{settings() ? "View conversation" : "Wallpaper settings"}</button>
+      <button onClick={() => setAppearance(appearance() === "dark" ? "light" : "dark")}>
+        {appearance() === "dark" ? "Use light theme" : "Use dark theme"}
+      </button>
       <button onClick={() => { if (enabled()) stop?.(); else start(); setEnabled(!enabled()) }}>{enabled() ? "Unload plugin" : "Load plugin"}</button>
     </header>
     <p class="test-disclaimer">Mock desktop layout · Real plugin code · No conversation data</p>

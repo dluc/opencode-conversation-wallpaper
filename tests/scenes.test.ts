@@ -11,6 +11,41 @@ function clearCommands() {
 }
 
 describe("wallpaper collection", () => {
+  it("uses blue-gray cloud textures in light mode, and rebuilds the original texture when returning to dark mode", () => {
+    const scene = createScene("clouds")
+    scene.resize(800, 600)
+    scene.draw(context, 0, 1, "dark")
+    const darkSprite = drawing.drawImage.mock.calls[0][0]
+    const gradients = () => drawing.createRadialGradient.mock.results.flatMap(result => result.value.addColorStop.mock.calls)
+    expect(gradients().some(call => String(call[1]).includes("176, 204, 235"))).toBe(true)
+    drawing.createRadialGradient.mockClear(); drawing.drawImage.mockClear()
+    scene.draw(context, 0, 1, "light")
+    expect(gradients().some(call => String(call[1]).includes("35, 65, 95"))).toBe(true)
+    expect(drawing.drawImage.mock.calls[0][0]).not.toBe(darkSprite)
+    drawing.createRadialGradient.mockClear()
+    scene.draw(context, 0, 1, "dark")
+    expect(gradients().some(call => String(call[1]).includes("176, 204, 235"))).toBe(true)
+  })
+  for (const [mode, dark, light] of [["fireflies", "#edf8b1", "#945308"], ["starfield", "#d8eaff", "#254466"]] as const) {
+    it(`${mode} uses a contrasting light palette and restores its dark palette without reseeding`, () => {
+      const random = vi.spyOn(Math, "random").mockReturnValue(0.5)
+      try {
+        const scene = createScene(mode)
+        scene.resize(800, 600)
+        scene.draw(context, 0, 1, "dark")
+        expect(drawing.fillStyle).toBe(dark)
+        clearCommands()
+        scene.draw(context, 0, 1, "dark")
+        const darkPositions = [...drawing.arc.mock.calls].map(call => call.slice(0, 2))
+        scene.draw(context, 0, 1, "light")
+        expect(drawing.fillStyle).toBe(light)
+        clearCommands()
+        scene.draw(context, 0, 1, "dark")
+        expect(drawing.fillStyle).toBe(dark)
+        expect(drawing.arc.mock.calls.map(call => call.slice(0, 2))).toEqual(darkPositions)
+      } finally { random.mockRestore() }
+    })
+  }
   it("offers five distinct effects without a user-configurable direction", () => {
     expect(collection.map(scene => scene.id)).toEqual(["matrix", "clouds", "fireflies", "starfield", "aurora"])
     expect(wallpaperName("image")).toBe("Your image")

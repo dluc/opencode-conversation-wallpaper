@@ -1,6 +1,6 @@
 {
   "name": "opencode-conversation-wallpaper",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "description": "An animated wallpaper collection and local image backgrounds for OpenCode V2 Desktop conversations",
@@ -14,7 +14,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "docs/images"
   ],
   "scripts": {
     "build:gui": "vite build",
@@ -23,6 +24,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:browser": "node scripts/check-browser.mjs",
+    "docs:screenshots": "node scripts/check-browser.mjs --update-doc-images",
     "check:package": "node scripts/check-package.mjs",
     "check": "npm run typecheck && npm test && npm run build:gui && npm run check:package"
   },

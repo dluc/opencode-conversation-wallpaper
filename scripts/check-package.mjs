@@ -10,6 +10,10 @@ for (const name of ["build", "prepare", "prepack", "preinstall", "install", "pos
 const [{ files }] = JSON.parse(execFileSync("npm", ["pack", "--dry-run", "--json"], { encoding: "utf8" }))
 const paths = new Set(files.map(file => file.path))
 assert(paths.has("README.md"))
+const readme = readFileSync("README.md", "utf8")
+for (const [, asset] of readme.matchAll(/!\[[^\]]*\]\((docs\/images\/[^)]+)\)/g)) {
+  assert(paths.has(asset), `README image is missing from the package: ${asset}`)
+}
 for (const entry of Object.values(manifest.exports)) assert(paths.has(entry.replace(/^\.\//, "")), `Missing export ${entry}`)
 assert(![...paths].some(path => /^(src|tests|preview|node_modules)\//.test(path)), "Do not ship tests, fixtures or node_modules")
 const bundle = readFileSync("dist/gui-experimental.cjs", "utf8")
