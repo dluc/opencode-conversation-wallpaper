@@ -1,0 +1,23 @@
+:root { color-scheme: dark; --v2-background-bg-base: #121513; --v2-text-text-base: #e4e9e5; --v2-border-border-base: #2a302c; font-family: system-ui, sans-serif; background: #0c0f0d; color: #e4e9e5; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+button { font: inherit; font-size: 12px; color: inherit; background: #242b26; border: 1px solid #3b443e; border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+button:hover { background: #303b33; }
+.test-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 24px; border-bottom: 1px solid #29302b; }
+.test-toolbar strong { font: 10px ui-monospace, monospace; letter-spacing: .12em; flex: 1; }
+.test-disclaimer { margin: 14px 24px 0; font-size: 11px; opacity: .5; }
+.test-main { max-width: 1000px; margin: auto; }
+.test-switch { display: flex; justify-content: space-between; gap: 20px; font-size: 13px; }
+.test-switch strong { font-weight: 500; }
+.test-switch small { display: block; opacity: .6; margin-top: 5px; font-size: 11px; }
+.test-switch input { width: 16px; height: 16px; }
+.test-conversation { margin: 24px; padding: 0; background: #121513; border: 1px solid #29302b; border-radius: 12px; overflow: hidden; }
+.test-timeline { height: 600px; position: relative; }
+[data-slot="session-timeline-scroll"] { position: relative; height: 100%; overflow: auto; }
+[data-slot="session-timeline-scroll"] > header { padding: 16px 24px; border-bottom: 1px solid #29302b; font-size: 13px; }
+[data-slot="session-timeline-scroll"] article { padding: 32px 48px; max-width: 760px; margin: auto; }
+article span { font: 10px ui-monospace, monospace; opacity: .5; letter-spacing: .1em; }
+article p { font-size: 15px; line-height: 1.7; }
+article h1 { font-size: 30px; font-weight: 500; letter-spacing: -.04em; }
+pre { background: #171d19; border: 1px solid #2c362f; border-radius: 8px; padding: 20px; font-size: 13px; line-height: 1.8; }
+textarea { display: block; width: calc(100% - 32px); margin: 16px; min-height: 80px; background: #1b221e; border: 1px solid #354239; border-radius: 8px; color: inherit; padding: 16px; font: inherit; resize: vertical; }
