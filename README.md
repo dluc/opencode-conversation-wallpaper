@@ -18,7 +18,7 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 | **Meteor Shower** | Shooting stars tracing diagonal trails |
 | **Night Sky** | Stars circling a fixed celestial pole, as viewed from Earth |
 | **Bouncing Balls** | Colorful balls rebounding off the edges |
-| **Blockfall** | An autonomous falling-block puzzle that places pieces, clears lines, and starts new rounds |
+| **Blockfall** | An inverted block puzzle: pieces rise from below, stack at the top, clear lines, and repeat |
 | **Disco Lights** | Colored spotlights and soft beams sweeping slowly—no strobing |
 | **Maze Chase** | An autonomous maze match: collect, evade sentries, finish, and play a new maze |
 | **Your image** | A still or animated local image, displayed as-is |
@@ -36,15 +36,16 @@ adjust dimming and animation speed, or pause it. Gallery thumbnails are stills, 
 
 | Blockfall · autonomous puzzle | Maze Chase · autonomous match |
 | --- | --- |
-| ![An original falling-block puzzle playing an autonomous round](docs/images/blockfall-dark.png) | ![An original generated maze with a diamond courier, collectibles, and circular sentries](docs/images/maze-chase-dark.png) |
+| ![An original block puzzle with pieces accumulating at the top of the screen](docs/images/blockfall-dark.png) | ![An original generated maze with a diamond courier, collectibles, and circular sentries](docs/images/maze-chase-dark.png) |
 
 These are real renderer captures from the mock desktop test layout, paused for screenshots—not screenshots of a live
 OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All eleven built-ins animate.
 
 ### Games that keep playing
 
-**Blockfall** plans legal placements, drops pieces, clears complete rows, and fades into another round when blocked or
-after a bounded 45-piece round. **Maze Chase** generates an original connected maze. A diamond courier collects the board,
+**Blockfall** plans legal placements, clears complete rows, and fades into another round when blocked or after a bounded
+45-piece round. Its board is displayed upside down: pieces rise from the bottom and accumulate at the top, keeping the
+lower reading area clearer. Only the board is flipped; score text stays upright. **Maze Chase** generates an original connected maze. A diamond courier collects the board,
 uses temporary shields, and avoids two circular sentries. It has three lives, win/loss states, and a fresh maze after each
 match; a 90-second simulated-time limit prevents stalled rounds. Both play autonomously and repeat indefinitely.
 
@@ -53,7 +54,7 @@ clicks, or conversation content, and have no audio. Pausing, reduced motion, or 
 clock too—there is no invisible background match progressing while you are away. Resizing does not reset a round.
 
 Both games fill the conversation's available width and height, with only a small edge inset and compact score row—no
-fixed-size centered mini-board. Blockfall adapts its grid and reflows its floor-anchored stack as the room changes.
+fixed-size centered mini-board. Blockfall adapts its grid and reflows its top-displayed stack as the room changes.
 Maze Chase scales the current match immediately, then generates a grid suited to the new aspect ratio at the next round.
 
 ## Features
@@ -166,7 +167,7 @@ were tested with the native v2.2.2 Linux CLI using isolated config/data/cache/st
 browser tests below, not a macOS Desktop test.
 
 To deliberately pin a release for reproducibility, new installations can use
-`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.3.1'`. To change an existing pin, use the same remove/add
+`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.3.2'`. To change an existing pin, use the same remove/add
 procedure with the exact old and new targets—not `plugin update` and not a second duplicate entry.
 
 For local development, configure an absolute path to a clone of this repository instead of the Git package.

@@ -5,6 +5,24 @@ import { BlockfallGame } from "../src/blockfall"
 import { MazeGame } from "../src/maze"
 import { drawing } from "./environment"
 
+it("Blockfall stacks at the top, sends new pieces upward, and leaves its HUD upright", () => {
+  const scene = createScene("blockfall")
+  scene.resize(800, 600)
+  scene.draw(drawing as unknown as CanvasRenderingContext2D, 0, 1)
+  const field = playfield(800, 600)
+  const rectangles = drawing.fillRect.mock.calls
+  const upper = rectangles.filter(([, y]) => y < field.y + field.height * 0.3)
+  const lower = rectangles.filter(([, y]) => y > field.y + field.height * 0.5)
+  expect(upper.length).toBeGreaterThan(10)
+  expect(lower.length).toBeGreaterThan(0)
+  const previousY = Math.max(...lower.map(([, y]) => y))
+  drawing.fillRect.mockClear()
+  scene.draw(drawing as unknown as CanvasRenderingContext2D, 0.1, 1)
+  const moved = drawing.fillRect.mock.calls.filter(([, y]) => y > field.y + field.height * 0.5)
+  expect(Math.max(...moved.map(([, y]) => y))).toBeLessThan(previousY)
+  expect(drawing.fillText.mock.lastCall![2]).toBeLessThan(field.y)
+})
+
 for (const mode of ["blockfall", "maze-chase"] as const) {
   it(`${mode} fills wide, tall, compact, and large playfields while preserving round progress`, () => {
     const scene = createScene(mode)

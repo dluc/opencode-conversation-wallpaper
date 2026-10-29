@@ -14,7 +14,7 @@ export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; descrip
   { id: "meteors", title: "Meteor Shower", description: "Diagonal trails · Shooting stars" },
   { id: "night-sky", title: "Night Sky", description: "Earthbound view · Circling stars" },
   { id: "balls", title: "Bouncing Balls", description: "Playful motion · Elastic rebounds" },
-  { id: "blockfall", title: "Blockfall", description: "Autoplay · Falling-block rounds" },
+  { id: "blockfall", title: "Blockfall", description: "Autoplay · Stack at the top" },
   { id: "disco", title: "Disco Lights", description: "Slow sweeps · No strobe" },
   { id: "maze-chase", title: "Maze Chase", description: "Autoplay · Collect, evade, repeat" },
 ]

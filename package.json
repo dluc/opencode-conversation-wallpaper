@@ -1,6 +1,6 @@
 {
   "name": "opencode-conversation-wallpaper",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
   "type": "module",
   "description": "An animated wallpaper collection and local image backgrounds for OpenCode V2 Desktop conversations",

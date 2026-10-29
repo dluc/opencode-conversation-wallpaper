@@ -11,6 +11,15 @@ try {
   // Observe actual Canvas calls in this test page, without adding telemetry to production rendering.
   await page.addInitScript(() => {
     const stroke = CanvasRenderingContext2D.prototype.strokeRect, text = CanvasRenderingContext2D.prototype.fillText
+    const clear = CanvasRenderingContext2D.prototype.clearRect, fill = CanvasRenderingContext2D.prototype.fillRect
+    CanvasRenderingContext2D.prototype.clearRect = function (...args) {
+      this.canvas.__blocks = []
+      return clear.apply(this, args)
+    }
+    CanvasRenderingContext2D.prototype.fillRect = function (...args) {
+      if (this.canvas.closest(".cw-preview")) (this.canvas.__blocks ??= []).push({ args, alpha: this.globalAlpha })
+      return fill.apply(this, args)
+    }
     CanvasRenderingContext2D.prototype.strokeRect = function (...args) {
       this.canvas.__playfield = args
       return stroke.apply(this, args)
@@ -140,6 +149,21 @@ try {
   await page.getByRole("slider", { name: "Dimming", exact: true }).evaluate(input => {
     input.value = "55"; input.dispatchEvent(new Event("change", { bubbles: true }))
   })
+  // Start a fresh paused round to verify orientation independently of autoplay progress.
+  await page.getByRole("radio", { name: /Your image/ }).check()
+  await page.getByRole("radio", { name: /Blockfall/ }).check()
+  await showPreview()
+  const orientation = await page.locator(".cw-preview canvas").first().evaluate(canvas => ({ field: canvas.__playfield, blocks: canvas.__blocks }))
+  const stack = orientation.blocks.filter(block => Math.abs(block.alpha - 0.7) < 0.001)
+  assert(stack.length > 10)
+  assert(stack.every(({ args }) => args[1] + args[3] < orientation.field[1] + orientation.field[3] * 0.3), "Blockfall still accumulates at the bottom")
+  const incomingY = Math.max(...orientation.blocks.filter(block => Math.abs(block.alpha - 0.85) < 0.001).map(block => block.args[1]))
+  await setPaused(false)
+  await page.waitForFunction(previous => {
+    const blocks = document.querySelector(".cw-preview canvas").__blocks.filter(block => Math.abs(block.alpha - 0.85) < 0.001)
+    return blocks.length && Math.max(...blocks.map(block => block.args[1])) < previous - 1
+  }, incomingY)
+  await setPaused(true)
   for (const [mode, title] of effects.filter(([id]) => id !== "aurora")) {
     await page.getByRole("radio", { name: new RegExp(title) }).check()
     const dark = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())

@@ -28,7 +28,8 @@ export class BlockfallScene extends AmbientScene {
     const block = (column: number, row: number, color: number) => {
       if (row < 0) return
       ctx.fillStyle = colors[(color - 1) % colors.length]
-      ctx.fillRect(x + column * cellX + gap / 2, y + row * cellY + gap / 2, cellX - gap, cellY - gap)
+      // Mirror only board rows: pieces enter below and stack above; the HUD stays upright.
+      ctx.fillRect(x + column * cellX + gap / 2, y + (game.rows - 1 - row) * cellY + gap / 2, cellX - gap, cellY - gap)
     }
     for (let row = 0; row < game.rows; row++) for (let column = 0; column < game.columns; column++) {
       if (!game.board[row][column]) continue
