@@ -2,7 +2,7 @@ import { beforeEach, vi } from "vitest"
 
 export const drawing = {
   clearRect: vi.fn(), fillText: vi.fn(), setTransform: vi.fn(), drawImage: vi.fn(),
-  save: vi.fn(), restore: vi.fn(), fillRect: vi.fn(), beginPath: vi.fn(), closePath: vi.fn(),
+  save: vi.fn(), restore: vi.fn(), fillRect: vi.fn(), strokeRect: vi.fn(), beginPath: vi.fn(), closePath: vi.fn(),
   arc: vi.fn(), fill: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(), stroke: vi.fn(),
   createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
   createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),

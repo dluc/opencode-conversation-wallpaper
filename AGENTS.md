@@ -7,7 +7,8 @@ Independent Git repository; parent is a workspace, not a monorepo.
 - Keep dependencies development-only. Do not add install-time build scripts.
 - Keep internal host selectors in `src/wallpaper.ts`. Fail closed when the expected timeline structure is absent.
 - Wallpaper never reads conversation text or changes message opacity, theme tokens, selection, scrolling, or pointer handling.
-- Five built-ins: digital rain, cloud drift, fireflies, starfield, aurora. Each owns its motion; do not expose direction controls. Gallery thumbnails are static. Only built-ins have speed controls; uploads display as-is without added movement or effects.
+- Eleven built-ins: digital rain, cloud drift, fireflies, starfield, aurora, meteor shower, night sky, bouncing balls, blockfall, disco lights, maze chase. Each owns its motion; do not expose direction controls. Gallery thumbnails are static. Only built-ins have speed controls; uploads display as-is without added movement or effects.
+- Game wallpapers are autonomous, original simulations with no borrowed names, characters, maps, assets, audio, or input capture. Model time advances only with visible animation frames; rounds must finish and restart, simulation state is bounded and survives resizing. Disco lights sweep smoothly without strobing.
 - Read the app appearance from the GUI SDK, not OS color-scheme queries. Clouds, fireflies, and stars use theme-aware palettes; preserve their original dark colors and repaint paused effects/thumbnails on theme changes. Never recolor uploads.
 - Local raster images only; reject SVG, remote URLs, filesystem URLs, unsupported MIME types, and files over 8 MB.
 - Respect reduced motion by default; only the explicit Follow system Reduce motion opt-out may override it. Manual pause always wins. Pause hidden timelines. Dispose observers, frames, listeners, and image sources on unload.

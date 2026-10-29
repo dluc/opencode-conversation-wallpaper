@@ -25,9 +25,11 @@
 .cw-heading h2 { font-size: 30px; font-weight: 550; letter-spacing: -.045em; margin: 8px 0; }
 .cw-heading p { font-size: 13px; opacity: .7; margin: 0 0 24px; }
 .cw-preview { position: relative; overflow: hidden; border-radius: 12px; min-height: 240px; background: var(--v2-background-bg-base, #101411); border: 1px solid var(--v2-border-border-base, #ffffff20); }
+.cw-preview-content { position: relative; z-index: 1; }
 .cw-preview-copy { position: relative; z-index: 1; padding: 30px; pointer-events: none; }
 .cw-preview-copy strong { display: block; margin-top: 20px; font-size: 25px; line-height: 1.25; letter-spacing: -.035em; font-weight: 530; }
 .cw-preview-copy p { margin-top: 14px; opacity: .7; font-size: 12px; }
+.cw-game-preview-label { position: absolute; top: 12px; left: 16px; z-index: 1; pointer-events: none; }
 .cw-motion-status { margin: 10px 0 0; font-size: 12px; opacity: .8; }
 .cw-controls { display: grid; gap: 26px; padding: 28px 0; }
 .cw-mode { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }

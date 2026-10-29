@@ -2,7 +2,7 @@ import { Command, Plugin, SettingsPage, Slot, Store, Style } from "@opencode/plu
 import { Schema } from "effect"
 import { createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js"
 import { defaults, MAX_SPEED, MIN_SPEED, MODES, validateImage, type BuiltinMode, type Preferences } from "./preferences"
-import { collection, createScene } from "./scenes"
+import { collection, createScene, wallpaperName } from "./scenes"
 import { mountWallpaper, statusMessage, watchTimelines, type WallpaperStatus } from "./wallpaper"
 import css from "./style.css?inline"
 
@@ -73,9 +73,14 @@ export default Plugin.define({
         onCleanup(wallpaper.dispose)
       })
       return <><div ref={host} class="cw-preview" aria-label="Wallpaper preview">
+        <div class="cw-preview-content">
+        <Show when={prefs().mode !== "blockfall" && prefs().mode !== "maze-chase"}
+          fallback={<span class="cw-game-preview-label cw-kicker">LIVE PREVIEW · {wallpaperName(prefs().mode)}</span>}>
         <div class="cw-preview-copy"><span class="cw-kicker">LIVE PREVIEW</span>
           <strong>A little atmosphere.<br />A clear train of thought.</strong>
           <p>Your conversations stay in the foreground.</p>
+        </div>
+        </Show>
         </div>
       </div>
         <p class="cw-motion-status">{status() ? statusMessage(status()!) : "Preparing preview…"}</p>
@@ -111,7 +116,7 @@ export default Plugin.define({
       return <section class="cw-settings" aria-label="Conversation wallpaper settings">
         <header class="cw-heading"><span class="cw-kicker">CONVERSATION WALLPAPER</span>
           <h2>Set the atmosphere.</h2>
-          <p>Five ways to move. Or something of your own. Always behind the conversation.</p>
+          <p>{collection.length} atmospheres. Or something of your own. Always behind the conversation.</p>
         </header>
         <Preview />
         <div class="cw-controls">
@@ -183,7 +188,7 @@ export default Plugin.define({
     ctx.add(SettingsPage, {
       id: "wallpaper", title: "Conversation wallpaper", icon: "settings-gear",
       entries: [
-        { id: "background", title: "Wallpaper collection and uploaded images", keywords: "matrix rain clouds fireflies starfield aurora wallpaper gif animation dimming pause" },
+        { id: "background", title: "Wallpaper collection and uploaded images", keywords: "matrix rain clouds fireflies starfield aurora meteors night sky balls blockfall disco maze chase wallpaper gif animation dimming pause" },
       ],
       render: () => <Settings />,
     })

@@ -1,12 +1,9 @@
-import { clamp, MAX_SPEED, MIN_SPEED, type BuiltinMode } from "./preferences"
+import { clamp, type BuiltinMode } from "./preferences"
 import { Rain } from "./rain"
-
-export type Appearance = "light" | "dark"
-
-export interface Scene {
-  resize(width: number, height: number): void
-  draw(ctx: CanvasRenderingContext2D, elapsed: number, speed: number, appearance?: Appearance): void
-}
+import { AmbientScene, type Appearance, type Scene } from "./scene"
+import { BouncingBalls, DiscoLights, MeteorShower, NightSky } from "./scenes-extra"
+import { BlockfallScene, MazeChaseScene } from "./scenes-games"
+export type { Appearance, Scene } from "./scene"
 
 export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; description: string }> = [
   { id: "matrix", title: "Digital rain", description: "Falling glyphs · Green phosphor" },
@@ -14,36 +11,16 @@ export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; descrip
   { id: "fireflies", title: "Fireflies", description: "Free wandering · Warm points of light" },
   { id: "starfield", title: "Starfield", description: "Through depth · Quiet cosmic travel" },
   { id: "aurora", title: "Aurora", description: "Flowing ribbons · Teal and violet" },
+  { id: "meteors", title: "Meteor Shower", description: "Diagonal trails · Shooting stars" },
+  { id: "night-sky", title: "Night Sky", description: "Earthbound view · Circling stars" },
+  { id: "balls", title: "Bouncing Balls", description: "Playful motion · Elastic rebounds" },
+  { id: "blockfall", title: "Blockfall", description: "Autoplay · Falling-block rounds" },
+  { id: "disco", title: "Disco Lights", description: "Slow sweeps · No strobe" },
+  { id: "maze-chase", title: "Maze Chase", description: "Autoplay · Collect, evade, repeat" },
 ]
 
 export function wallpaperName(mode: string): string {
   return collection.find(scene => scene.id === mode)?.title ?? "Your image"
-}
-
-/** Fixed motion belongs to each scene. Only a shared speed multiplier is configurable. */
-abstract class AmbientScene implements Scene {
-  protected width = 0
-  protected height = 0
-  protected time = 0
-  protected appearance: Appearance = "dark"
-
-  resize(width: number, height: number) {
-    this.width = Math.max(0, width)
-    this.height = Math.max(0, height)
-    this.layout()
-  }
-  protected layout() {}
-  draw(ctx: CanvasRenderingContext2D, elapsed: number, speed: number, appearance: Appearance = "dark") {
-    if (!this.width || !this.height) return
-    this.appearance = appearance
-    const delta = clamp(elapsed, 0, 0.1) * clamp(speed, MIN_SPEED, MAX_SPEED)
-    this.time += delta
-    ctx.clearRect(0, 0, this.width, this.height)
-    ctx.save()
-    this.paint(ctx, delta)
-    ctx.restore()
-  }
-  protected abstract paint(ctx: CanvasRenderingContext2D, delta: number): void
 }
 
 /** Soft light is prerendered once, not rebuilt for every particle on every frame. */
@@ -209,5 +186,11 @@ export function createScene(mode: BuiltinMode): Scene {
     case "fireflies": return new Fireflies()
     case "starfield": return new Starfield()
     case "aurora": return new Aurora()
+    case "meteors": return new MeteorShower()
+    case "night-sky": return new NightSky()
+    case "balls": return new BouncingBalls()
+    case "blockfall": return new BlockfallScene()
+    case "disco": return new DiscoLights()
+    case "maze-chase": return new MazeChaseScene()
   }
 }

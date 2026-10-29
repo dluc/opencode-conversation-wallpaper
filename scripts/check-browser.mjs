@@ -8,6 +8,11 @@ await server.listen()
 const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, headless: true })
 try {
   const page = await browser.newPage({ viewport: { width: 1100, height: 1100 } })
+  const showPreview = () => page.locator(".cw-preview").scrollIntoViewIfNeeded()
+  const setPaused = async value => {
+    await page.getByRole("checkbox", { name: /^Pause animation/ }).setChecked(value)
+    await showPreview()
+  }
   const errors = []
   page.on("pageerror", error => errors.push(error.message))
   await page.goto("http://localhost:4322/preview/")
@@ -27,12 +32,13 @@ try {
   await mkdir("test-results", { recursive: true })
   await page.screenshot({ path: "test-results/settings.png", fullPage: true })
   await page.locator(".cw-mode").screenshot({ path: "test-results/collection.png" })
+  await showPreview()
 
-  await page.getByRole("checkbox", { name: /^Pause animation/ }).check()
+  await setPaused(true)
   const frozen = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
   assert.equal(await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL()), frozen)
-  await page.getByRole("checkbox", { name: /^Pause animation/ }).uncheck()
+  await setPaused(false)
   await page.waitForFunction(previous => document.querySelector(".cw-preview canvas").toDataURL() !== previous, frozen)
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.getByText("Animation paused by your system’s Reduce motion setting.", { exact: true }).waitFor()
@@ -40,8 +46,10 @@ try {
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
   assert.equal(await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL()), reduced)
   await page.getByRole("checkbox", { name: /^Follow system Reduce motion/ }).uncheck()
+  await showPreview()
   await page.waitForFunction(previous => document.querySelector(".cw-preview canvas").toDataURL() !== previous, reduced)
   await page.getByRole("checkbox", { name: /^Follow system Reduce motion/ }).check()
+  await showPreview()
   await page.getByText("Animation paused by your system’s Reduce motion setting.", { exact: true }).waitFor()
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await page.getByText(/Digital rain is animating/).waitFor()
@@ -59,23 +67,41 @@ try {
   await page.screenshot({ path: "test-results/conversation.png", fullPage: true })
 
   await page.getByRole("button", { name: "Wallpaper settings" }).click()
-  assert.equal(await page.getByRole("radio").count(), 6)
+  assert.equal(await page.getByRole("radio").count(), 12)
   assert.equal(await page.getByRole("combobox", { name: /Direction/i }).count(), 0)
   await page.getByRole("radio", { name: /Digital rain/ }).focus()
   await page.keyboard.press("ArrowRight")
   assert.equal(await page.getByRole("radio", { name: /Cloud Drift/ }).isChecked(), true)
-  for (const [mode, title] of [["clouds", "Cloud Drift"], ["fireflies", "Fireflies"], ["starfield", "Starfield"], ["aurora", "Aurora"]]) {
+  const effects = [["clouds", "Cloud Drift"], ["fireflies", "Fireflies"], ["starfield", "Starfield"], ["aurora", "Aurora"],
+    ["meteors", "Meteor Shower"], ["night-sky", "Night Sky"], ["balls", "Bouncing Balls"],
+    ["blockfall", "Blockfall"], ["disco", "Disco Lights"], ["maze-chase", "Maze Chase"]]
+  for (const [mode, title] of effects) {
     await page.getByRole("radio", { name: new RegExp(title) }).check()
     await speed.evaluate(input => { input.value = "4"; input.dispatchEvent(new Event("change", { bubbles: true })) })
+    await showPreview()
     await page.getByText(new RegExp(`${title} is animating`)).waitFor()
+    if (mode === "blockfall" || mode === "maze-chase") {
+      await page.locator(".cw-preview").evaluate(element => { element.style.width = "1px"; element.style.height = "1px"; element.style.minHeight = "1px" })
+      await page.waitForFunction(() => document.querySelector(".cw-preview canvas").width < 10)
+      await page.locator(".cw-preview").evaluate(element => { element.style.width = ""; element.style.height = ""; element.style.minHeight = "" })
+      await page.waitForFunction(() => document.querySelector(".cw-preview canvas").width > 300)
+    }
     const frame = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())
     await page.waitForFunction(previous => document.querySelector(".cw-preview canvas").toDataURL() !== previous, frame)
-    await page.getByRole("checkbox", { name: /^Pause animation/ }).check()
+    await setPaused(true)
     const still = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
     assert.equal(await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL()), still)
+    if (mode === "blockfall" || mode === "maze-chase") {
+      await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "400px" })
+      await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height >= 400)
+    }
     await page.locator(".cw-preview").screenshot({ path: `test-results/${mode}.png` })
-    await page.getByRole("checkbox", { name: /^Pause animation/ }).uncheck()
+    if (mode === "blockfall" || mode === "maze-chase") {
+      await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "" })
+      await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height < 300)
+    }
+    await setPaused(false)
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.getByText("Animation paused by your system’s Reduce motion setting.", { exact: true }).waitFor()
     await page.emulateMedia({ reducedMotion: "no-preference" })
@@ -87,11 +113,11 @@ try {
   assert.deepEqual(await page.locator(".cw-thumbnail").evaluateAll(canvases => canvases.map(canvas => canvas.toDataURL())), thumbnails)
   // Measure the wallpaper pixels themselves against white, not text or a CSS background.
   // Palettes must change even while paused, and dark mode must restore the exact still frame.
-  await page.getByRole("checkbox", { name: /^Pause animation/ }).check()
+  await setPaused(true)
   await page.getByRole("slider", { name: "Dimming", exact: true }).evaluate(input => {
     input.value = "55"; input.dispatchEvent(new Event("change", { bubbles: true }))
   })
-  for (const [mode, title] of [["clouds", "Cloud Drift"], ["fireflies", "Fireflies"], ["starfield", "Starfield"]]) {
+  for (const [mode, title] of effects.filter(([id]) => id !== "aurora")) {
     await page.getByRole("radio", { name: new RegExp(title) }).check()
     const dark = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())
     const thumbnail = page.getByRole("radio", { name: new RegExp(title) }).locator("..").locator("canvas")
@@ -119,32 +145,34 @@ try {
     assert.equal(await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL()), light)
     await page.getByRole("button", { name: "Use dark theme", exact: true }).click()
     assert.equal(await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL()), dark)
-    await page.getByRole("checkbox", { name: /^Pause animation/ }).uncheck()
+    await setPaused(false)
     await page.getByRole("button", { name: "Use light theme", exact: true }).click()
     await page.locator('.cw-preview .cw-layer[data-appearance="light"][data-motion="animation"]').waitFor()
     const moving = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())
     await page.waitForFunction(previous => document.querySelector(".cw-preview canvas").toDataURL() !== previous, moving)
-    await page.getByRole("checkbox", { name: /^Pause animation/ }).check()
+    await setPaused(true)
     await page.getByRole("button", { name: "Use dark theme", exact: true }).click()
   }
-  await page.getByRole("checkbox", { name: /^Pause animation/ }).uncheck()
+  await setPaused(false)
   await page.getByRole("radio", { name: /Your image/ }).check()
   assert.equal(await page.getByRole("slider", { name: "Animation speed", exact: true }).count(), 0)
   const gif = Buffer.from("R0lGODlhEAAQAIEAAAg4IwAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh+QQACgAAACwAAAAAEAAQAAAIHQABCBxIsKDBgwgTKlzIsKHDhxAjSpxIsaLFgQEBACH5BAEKAAEALAAAAAAQABAAgY//wgAAAAAAAAAAAAgdAAEIHEiwoMGDCBMqXMiwocOHECNKnEixosWBAQEAOw==", "base64")
   await page.locator('input[type="file"]').setInputFiles({ name: "animated-test.gif", mimeType: "image/gif", buffer: gif })
   await page.getByText("animated-test.gif", { exact: true }).waitFor()
+  await showPreview()
   await page.waitForFunction(() => document.querySelector(".cw-preview img").naturalWidth === 16)
-  await page.getByRole("checkbox", { name: /^Pause animation/ }).check()
+  await setPaused(true)
   await page.waitForFunction(() => {
     const image = document.querySelector(".cw-preview img")
     const still = document.querySelectorAll(".cw-preview canvas")[1]
     return !image.hasAttribute("src") && image.hidden && !still.hidden && still.width === 16
   })
-  await page.getByRole("checkbox", { name: /^Pause animation/ }).uncheck()
+  await setPaused(false)
   await page.waitForFunction(() => document.querySelector(".cw-preview img").naturalWidth === 16)
   const uploaded = await page.locator(".cw-preview img").getAttribute("src")
   await page.getByRole("radio", { name: /Cloud Drift/ }).check()
   await page.getByRole("radio", { name: /Your image/ }).check()
+  await showPreview()
   await page.waitForFunction(() => document.querySelector(".cw-preview img").naturalWidth === 16)
   assert.equal(await page.locator(".cw-preview img").getAttribute("src"), uploaded)
   await page.getByRole("button", { name: "Remove image", exact: true }).click()
@@ -157,6 +185,7 @@ try {
   })
   await page.locator('input[type="file"]').setInputFiles({ name: "still-test.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") })
   await page.getByText("still-test.png", { exact: true }).waitFor()
+  await showPreview()
   await page.waitForFunction(() => document.querySelector(".cw-preview img").naturalWidth === 64)
   const stillSource = await page.locator(".cw-preview img").getAttribute("src")
   await page.getByRole("button", { name: "Use light theme", exact: true }).click()
@@ -193,10 +222,11 @@ try {
       ["collection.png", "collection.png"], ["aurora.png", "aurora-dark.png"],
       ["fireflies.png", "fireflies-dark.png"], ["clouds-light.png", "clouds-light.png"],
       ["starfield-light.png", "starfield-light.png"],
+      ["blockfall.png", "blockfall-dark.png"], ["maze-chase.png", "maze-chase-dark.png"],
     ]) await copyFile(`test-results/${source}`, `docs/images/${target}`)
     console.log("README screenshots refreshed in docs/images/ from the verified mock desktop layout.")
   }
-  console.log("Browser checks passed: all five animations, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, image/GIF import and freeze, unchanged uploads, built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
+  console.log("Browser checks passed: all 11 animations, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
 } finally {
   await browser.close()
   await server.close()

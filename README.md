@@ -15,6 +15,12 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 | **Fireflies** | Warm glowing particles wandering freely |
 | **Starfield** | Quiet travel through depth, stars moving outward |
 | **Aurora** | Teal and violet ribbons flowing and undulating |
+| **Meteor Shower** | Shooting stars tracing diagonal trails |
+| **Night Sky** | Stars circling a fixed celestial pole, as viewed from Earth |
+| **Bouncing Balls** | Colorful balls rebounding off the edges |
+| **Blockfall** | An autonomous falling-block puzzle that places pieces, clears lines, and starts new rounds |
+| **Disco Lights** | Colored spotlights and soft beams sweeping slowly—no strobing |
+| **Maze Chase** | An autonomous maze match: collect, evade sentries, finish, and play a new maze |
 | **Your image** | A still or animated local image, displayed as-is |
 
 Each built-in wallpaper defines its own movement; there is no direction control. Select one from the gallery,
@@ -28,8 +34,23 @@ adjust dimming and animation speed, or pause it. Gallery thumbnails are stills, 
 | **Cloud Drift · light theme** | **Starfield · light theme** |
 | ![Soft blue-gray clouds behind dark text on a light background](docs/images/clouds-light.png) | ![Ink-blue stars visible behind conversation text in light mode](docs/images/starfield-light.png) |
 
+| Blockfall · autonomous puzzle | Maze Chase · autonomous match |
+| --- | --- |
+| ![An original falling-block puzzle playing an autonomous round](docs/images/blockfall-dark.png) | ![An original generated maze with a diamond courier, collectibles, and circular sentries](docs/images/maze-chase-dark.png) |
+
 These are real renderer captures from the mock desktop test layout, paused for screenshots—not screenshots of a live
-OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All five built-ins animate.
+OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All eleven built-ins animate.
+
+### Games that keep playing
+
+**Blockfall** plans legal placements, drops pieces, clears complete rows, and fades into another round when blocked or
+after a bounded 45-piece round. **Maze Chase** generates an original connected maze. A diamond courier collects the board,
+uses temporary shields, and avoids two circular sentries. It has three lives, win/loss states, and a fresh maze after each
+match; a 90-second simulated-time limit prevents stalled rounds. Both play autonomously and repeat indefinitely.
+
+These are original decorative simulations, not interactive games or branded reproductions. They do not capture keys,
+clicks, or conversation content, and have no audio. Pausing, reduced motion, or hiding the conversation freezes the game
+clock too—there is no invisible background match progressing while you are away. Resizing does not reset a round.
 
 ## Features
 
@@ -42,6 +63,7 @@ OpenCode Desktop installation. Your theme, fonts, and dimming setting may look d
 - Honors system reduced motion by default, with an explicit opt-out. Built-ins stop and images freeze when the timeline or app document is hidden.
 - Live preview status explains pauses and reports actual painted frames. A **Make wallpaper more visible** preset sets 40% dimming and 1.2× speed.
 - Canvas effects capped at 24 fps and 2× pixel density. Cloud and firefly glow textures are cached; particle counts are bounded.
+- Six additional atmospheres: meteors, an Earth-view rotating sky, bouncing balls, two autonomous games, and smooth disco lights.
 - Clouds, fireflies, and stars automatically adapt to the app's light or dark appearance. Light mode uses blue-gray mist,
   amber fireflies, and ink-blue stars; the original dark palettes are preserved. Paused wallpapers and gallery thumbnails
   repaint when you switch themes, while uploaded images keep their original colors.
@@ -140,7 +162,7 @@ were tested with the native v2.2.2 Linux CLI using isolated config/data/cache/st
 browser tests below, not a macOS Desktop test.
 
 To deliberately pin a release for reproducibility, new installations can use
-`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.2.2'`. To change an existing pin, use the same remove/add
+`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.3.0'`. To change an existing pin, use the same remove/add
 procedure with the exact old and new targets—not `plugin update` and not a second duplicate entry.
 
 For local development, configure an absolute path to a clone of this repository instead of the Git package.
@@ -216,7 +238,7 @@ Do not add install-time build scripts: the prebuilt package should be usable wit
 
 ### Verification scope
 
-Unit/DOM tests cover all five renderers (motion, still frames, speed, resizing), input restrictions, host detection,
+Unit/DOM tests cover all eleven renderers (motion, still frames, 4× speed, resizing), input restrictions, host detection,
 hidden/paused/disabled states, animation cleanup, image snapshots/errors/removal, and late-mounted/cached timelines.
 Chromium tests run the **real plugin setup and settings UI against a mock host**, checking every animation,
 static gallery thumbnails, pause/resume, reduced motion, GIF import/freeze, unchanged still uploads, preserved uploads
@@ -225,10 +247,14 @@ and unloading/reloading. Light-mode checks measure the canvas pixels composited 
 theme changes while running and paused, and restoration of the original dark frames. Screenshots are saved
 to ignored `test-results/`.
 
+Simulation tests run multiple complete game rounds, check connected mazes, legal actor positions, row clearing,
+board completion, lost lives, and automatic restarts. Browser checks also exercise game/non-game preview transitions,
+tiny positive viewport sizes, and switching back to uploaded images in the larger gallery.
+
 These are not a live OpenCode Desktop installation test. Verify the plugin in your actual app version before
 relying on compatibility. No global OpenCode configuration is modified by the tests or build.
 
-Refresh the five checked-in README images only after the browser checks succeed:
+Refresh the seven checked-in README images only after the browser checks succeed:
 
 ```sh
 npm run docs:screenshots

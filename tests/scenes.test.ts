@@ -1,17 +1,32 @@
 import { describe, expect, it, vi } from "vitest"
 import { collection, createScene, wallpaperName } from "../src/scenes"
-import { MAX_SPEED } from "../src/preferences"
+import { MAX_SPEED, MODES } from "../src/preferences"
 import { drawing } from "./environment"
 
 const context = drawing as unknown as CanvasRenderingContext2D
 function commands() {
-  return [drawing.fillText, drawing.drawImage, drawing.arc, drawing.moveTo, drawing.lineTo].map(fn => [...fn.mock.calls])
+  return [drawing.fillText, drawing.drawImage, drawing.arc, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect].map(fn => [...fn.mock.calls])
 }
 function clearCommands() {
-  for (const fn of [drawing.fillText, drawing.drawImage, drawing.arc, drawing.moveTo, drawing.lineTo]) fn.mockClear()
+  for (const fn of [drawing.fillText, drawing.drawImage, drawing.arc, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect]) fn.mockClear()
 }
 
 describe("wallpaper collection", () => {
+  it("keeps clouds horizontal and the night sky rotating around a fixed pole", () => {
+    const clouds = createScene("clouds")
+    clouds.resize(800, 600); clouds.draw(context, 0, 1)
+    const before = drawing.drawImage.mock.calls[0]
+    drawing.drawImage.mockClear(); clouds.draw(context, 0.1, 1)
+    expect(drawing.drawImage.mock.calls[0][1]).toBeGreaterThan(before[1])
+    expect(drawing.drawImage.mock.calls[0][2]).toBe(before[2])
+    const sky = createScene("night-sky")
+    sky.resize(800, 600); drawing.arc.mockClear(); sky.draw(context, 0, 1)
+    const star = drawing.arc.mock.calls[1]
+    drawing.arc.mockClear(); sky.draw(context, 0.1, 1)
+    const moved = drawing.arc.mock.calls[1]
+    expect(moved.slice(0, 2)).not.toEqual(star.slice(0, 2))
+    expect(Math.hypot(moved[0] - 400, moved[1] - 78)).toBeCloseTo(Math.hypot(star[0] - 400, star[1] - 78), 6)
+  })
   it("uses blue-gray cloud textures in light mode, and rebuilds the original texture when returning to dark mode", () => {
     const scene = createScene("clouds")
     scene.resize(800, 600)
@@ -47,8 +62,9 @@ describe("wallpaper collection", () => {
       } finally { random.mockRestore() }
     })
   }
-  it("offers five distinct effects without a user-configurable direction", () => {
-    expect(collection.map(scene => scene.id)).toEqual(["matrix", "clouds", "fireflies", "starfield", "aurora"])
+  it("offers each built-in exactly once without a user-configurable direction", () => {
+    expect(collection.map(scene => scene.id)).toEqual(MODES.filter(mode => mode !== "image"))
+    expect(new Set(collection.map(scene => scene.id)).size).toBe(11)
     expect(wallpaperName("image")).toBe("Your image")
   })
   for (const entry of collection) {
@@ -99,6 +115,7 @@ describe("wallpaper collection", () => {
         expect(commands()).toEqual(halfSpeed)
         expect(() => {
           slow.resize(0, 0); slow.draw(context, 0.1, 1)
+          slow.resize(1, 1); slow.draw(context, 0.1, 1)
           slow.resize(390, 844); slow.draw(context, 0.1, 2)
         }).not.toThrow()
       } finally { random.mockRestore() }

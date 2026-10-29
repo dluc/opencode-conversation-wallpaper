@@ -1,4 +1,4 @@
-export const MODES = ["matrix", "clouds", "fireflies", "starfield", "aurora", "image"] as const
+export const MODES = ["matrix", "clouds", "fireflies", "starfield", "aurora", "meteors", "night-sky", "balls", "blockfall", "disco", "maze-chase", "image"] as const
 export type Mode = typeof MODES[number]
 export type BuiltinMode = Exclude<Mode, "image">
 export const MIN_SPEED = 0.2
