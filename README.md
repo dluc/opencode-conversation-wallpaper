@@ -52,6 +52,10 @@ These are original decorative simulations, not interactive games or branded repr
 clicks, or conversation content, and have no audio. Pausing, reduced motion, or hiding the conversation freezes the game
 clock too—there is no invisible background match progressing while you are away. Resizing does not reset a round.
 
+Both games fill the conversation's available width and height, with only a small edge inset and compact score row—no
+fixed-size centered mini-board. Blockfall adapts its grid and reflows its floor-anchored stack as the room changes.
+Maze Chase scales the current match immediately, then generates a grid suited to the new aspect ratio at the next round.
+
 ## Features
 
 - Built-in green digital rain, enabled by default at 55% dimming with smooth movement between cells.
@@ -162,7 +166,7 @@ were tested with the native v2.2.2 Linux CLI using isolated config/data/cache/st
 browser tests below, not a macOS Desktop test.
 
 To deliberately pin a release for reproducibility, new installations can use
-`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.3.0'`. To change an existing pin, use the same remove/add
+`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.3.1'`. To change an existing pin, use the same remove/add
 procedure with the exact old and new targets—not `plugin update` and not a second duplicate entry.
 
 For local development, configure an absolute path to a clone of this repository instead of the Git package.
@@ -249,7 +253,9 @@ to ignored `test-results/`.
 
 Simulation tests run multiple complete game rounds, check connected mazes, legal actor positions, row clearing,
 board completion, lost lives, and automatic restarts. Browser checks also exercise game/non-game preview transitions,
-tiny positive viewport sizes, and switching back to uploaded images in the larger gallery.
+tiny positive viewport sizes, and switching back to uploaded images in the larger gallery. Responsive-game tests inspect
+actual Canvas playfield calls at landscape, portrait, and tiny sizes, checking full-area coverage and unchanged round
+counters while a paused match is resized.
 
 These are not a live OpenCode Desktop installation test. Verify the plugin in your actual app version before
 relying on compatibility. No global OpenCode configuration is modified by the tests or build.

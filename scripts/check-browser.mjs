@@ -8,6 +8,18 @@ await server.listen()
 const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, headless: true })
 try {
   const page = await browser.newPage({ viewport: { width: 1100, height: 1100 } })
+  // Observe actual Canvas calls in this test page, without adding telemetry to production rendering.
+  await page.addInitScript(() => {
+    const stroke = CanvasRenderingContext2D.prototype.strokeRect, text = CanvasRenderingContext2D.prototype.fillText
+    CanvasRenderingContext2D.prototype.strokeRect = function (...args) {
+      this.canvas.__playfield = args
+      return stroke.apply(this, args)
+    }
+    CanvasRenderingContext2D.prototype.fillText = function (...args) {
+      if (String(args[0]).startsWith("ROUND ")) this.canvas.__hud = args[0]
+      return text.apply(this, args)
+    }
+  })
   const showPreview = () => page.locator(".cw-preview").scrollIntoViewIfNeeded()
   const setPaused = async value => {
     await page.getByRole("checkbox", { name: /^Pause animation/ }).setChecked(value)
@@ -80,12 +92,6 @@ try {
     await speed.evaluate(input => { input.value = "4"; input.dispatchEvent(new Event("change", { bubbles: true })) })
     await showPreview()
     await page.getByText(new RegExp(`${title} is animating`)).waitFor()
-    if (mode === "blockfall" || mode === "maze-chase") {
-      await page.locator(".cw-preview").evaluate(element => { element.style.width = "1px"; element.style.height = "1px"; element.style.minHeight = "1px" })
-      await page.waitForFunction(() => document.querySelector(".cw-preview canvas").width < 10)
-      await page.locator(".cw-preview").evaluate(element => { element.style.width = ""; element.style.height = ""; element.style.minHeight = "" })
-      await page.waitForFunction(() => document.querySelector(".cw-preview canvas").width > 300)
-    }
     const frame = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())
     await page.waitForFunction(previous => document.querySelector(".cw-preview canvas").toDataURL() !== previous, frame)
     await setPaused(true)
@@ -100,6 +106,23 @@ try {
     if (mode === "blockfall" || mode === "maze-chase") {
       await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "" })
       await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height < 300)
+      const hud = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.__hud)
+      for (const [width, height] of [[1200, 600], [360, 800], [900, 240], [1, 1]]) {
+        await page.locator(".cw-preview").evaluate((element, [w, h]) => {
+          element.style.width = `${w}px`; element.style.height = `${h}px`; element.style.minHeight = "0"
+        }, [width, height])
+        await page.waitForFunction(([w, h]) => {
+          const canvas = document.querySelector(".cw-preview canvas"), ratio = Math.min(devicePixelRatio, 2)
+          return Math.abs(canvas.width - Math.max(2, w) * ratio) <= 1 && Math.abs(canvas.height - Math.max(2, h) * ratio) <= 1
+        }, [width, height])
+        const bounds = await page.locator(".cw-preview canvas").first().evaluate(canvas => ({
+          field: canvas.__playfield, hud: canvas.__hud, rect: canvas.closest(".cw-preview").getBoundingClientRect().toJSON(),
+        }))
+        assert(bounds.field[2] / bounds.rect.width > 0.94 && bounds.field[3] / bounds.rect.height > 0.88, `${title} does not fill ${width}×${height}: ${JSON.stringify(bounds)}`)
+        assert.equal(bounds.hud, hud, `${title} restarted or advanced while resizing a paused round`)
+      }
+      await page.locator(".cw-preview").evaluate(element => { element.style.width = ""; element.style.height = ""; element.style.minHeight = "" })
+      await page.waitForFunction(() => document.querySelector(".cw-preview canvas").width > 300)
     }
     await setPaused(false)
     await page.emulateMedia({ reducedMotion: "reduce" })

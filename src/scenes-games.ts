@@ -1,6 +1,7 @@
 import { AmbientScene } from "./scene"
 import { BlockfallGame } from "./blockfall"
 import { MazeGame } from "./maze"
+import { adaptiveGrid, playfield } from "./game-layout"
 
 const palette = {
   dark: ["#65d8d0", "#e69b86", "#a699e7", "#9acc87", "#82b2e9", "#dfb65b", "#d483ad"],
@@ -8,19 +9,26 @@ const palette = {
 }
 
 export class BlockfallScene extends AmbientScene {
-  private game = new BlockfallGame()
+  private game: BlockfallGame | undefined
+  protected layout() {
+    if (!this.width || !this.height) return
+    const { columns, rows } = adaptiveGrid(this.width, this.height, 220)
+    if (!this.game) this.game = new BlockfallGame(columns, rows)
+    else this.game.resize(columns, rows)
+  }
   protected paint(ctx: CanvasRenderingContext2D, delta: number) {
-    const game = this.game; game.advance(delta)
-    const cell = Math.max(0.5, Math.min(this.width * 0.6 / game.columns, (this.height - 32) / game.rows, 28))
-    const x = (this.width - cell * game.columns) / 2, y = (this.height - cell * game.rows) / 2 + 5
+    const game = this.game!; game.advance(delta)
+    const field = playfield(this.width, this.height), { x, y } = field
+    const cellX = field.width / game.columns, cellY = field.height / game.rows
+    const gap = Math.min(2, cellX * 0.12, cellY * 0.12)
     const light = this.appearance === "light", colors = palette[this.appearance]
     ctx.globalAlpha = game.stage === "reset" ? Math.max(0, 1 - game.age / 2) : 0.8
     ctx.strokeStyle = light ? "#7892a7" : "#647c91"; ctx.lineWidth = 0.6
-    ctx.strokeRect(x - 2, y - 2, cell * game.columns + 4, cell * game.rows + 4)
+    ctx.strokeRect(x, y, field.width, field.height)
     const block = (column: number, row: number, color: number) => {
       if (row < 0) return
       ctx.fillStyle = colors[(color - 1) % colors.length]
-      ctx.fillRect(x + column * cell + 1, y + row * cell + 1, Math.max(1, cell - 2), Math.max(1, cell - 2))
+      ctx.fillRect(x + column * cellX + gap / 2, y + row * cellY + gap / 2, cellX - gap, cellY - gap)
     }
     for (let row = 0; row < game.rows; row++) for (let column = 0; column < game.columns; column++) {
       if (!game.board[row][column]) continue
@@ -38,27 +46,36 @@ export class BlockfallScene extends AmbientScene {
 }
 
 export class MazeChaseScene extends AmbientScene {
-  private game = new MazeGame()
+  private game: MazeGame | undefined
+  protected layout() {
+    if (!this.width || !this.height) return
+    const { columns, rows } = adaptiveGrid(this.width, this.height, 420, true)
+    if (!this.game) this.game = new MazeGame(columns, rows)
+    else this.game.setNextLayout(columns, rows)
+  }
   protected paint(ctx: CanvasRenderingContext2D, delta: number) {
-    const game = this.game; game.advance(delta)
-    const cell = Math.max(0.5, Math.min((this.width - 30) / game.columns, (this.height - 32) / game.rows, 30))
-    const x = (this.width - cell * game.columns) / 2, y = (this.height - cell * game.rows) / 2 + 5
+    const game = this.game!; game.advance(delta)
+    const field = playfield(this.width, this.height), { x, y } = field
+    const cellX = field.width / game.columns, cellY = field.height / game.rows, cell = Math.min(cellX, cellY)
+    const gap = Math.min(1.6, cell * 0.12)
     const light = this.appearance === "light"
     const fade = game.stage === "playing" ? Math.min(1, 0.65 + game.age) : Math.max(0, 1 - game.age / 2.5)
     ctx.globalAlpha = 0.65 * fade
     ctx.fillStyle = light ? "#789ca6" : "#42677a"
+    ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 0.6
+    ctx.strokeRect(x, y, field.width, field.height)
     for (let id = 0; id < game.walls.length; id++) if (game.walls[id]) {
-      ctx.fillRect(x + id % game.columns * cell + 0.8, y + Math.floor(id / game.columns) * cell + 0.8, cell - 1.6, cell - 1.6)
+      ctx.fillRect(x + id % game.columns * cellX + gap / 2, y + Math.floor(id / game.columns) * cellY + gap / 2, cellX - gap, cellY - gap)
     }
     ctx.fillStyle = light ? "#826426" : "#d3bf7c"
     for (const id of game.pellets) {
-      ctx.beginPath(); ctx.arc(x + (id % game.columns + 0.5) * cell, y + (Math.floor(id / game.columns) + 0.5) * cell,
+      ctx.beginPath(); ctx.arc(x + (id % game.columns + 0.5) * cellX, y + (Math.floor(id / game.columns) + 0.5) * cellY,
         cell * (game.powers.has(id) ? 0.18 : 0.07), 0, Math.PI * 2); ctx.fill()
     }
     const position = (from: number, to: number) => {
       const t = game.interpolation
-      return [x + (from % game.columns + (to % game.columns - from % game.columns) * t + 0.5) * cell,
-        y + (Math.floor(from / game.columns) + (Math.floor(to / game.columns) - Math.floor(from / game.columns)) * t + 0.5) * cell]
+      return [x + (from % game.columns + (to % game.columns - from % game.columns) * t + 0.5) * cellX,
+        y + (Math.floor(from / game.columns) + (Math.floor(to / game.columns) - Math.floor(from / game.columns)) * t + 0.5) * cellY]
     }
     const [px, py] = position(game.previousPlayer, game.player)
     ctx.globalAlpha = 0.95 * fade; ctx.fillStyle = light ? "#087b86" : "#6ce0d4"

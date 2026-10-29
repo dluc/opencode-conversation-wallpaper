@@ -19,8 +19,8 @@ function rotations(shape: readonly Cell[]): Cell[][] {
 
 /** Small bounded falling-block simulation. Planning runs once per piece, never per frame. */
 export class BlockfallGame {
-  readonly columns = 10
-  readonly rows = 18
+  columns: number
+  rows: number
   board: number[][] = []
   round = 1
   pieces = 0
@@ -30,7 +30,27 @@ export class BlockfallGame {
   clearing: number[] = []
   piece: { cells: Cell[]; x: number; landing: number; color: number } | undefined
   private seed = 193
-  constructor() { this.reset() }
+  constructor(columns = 10, rows = 18) {
+    this.columns = Math.max(8, Math.min(36, Math.round(columns)))
+    this.rows = Math.max(8, Math.min(36, Math.round(rows)))
+    this.reset()
+  }
+  /** Reflow the existing stack, anchored at the floor; keep round, counters, and piece age. */
+  resize(columns: number, rows: number) {
+    columns = Math.max(8, Math.min(36, Math.round(columns)))
+    rows = Math.max(8, Math.min(36, Math.round(rows)))
+    if (columns === this.columns && rows === this.rows) return
+    const board = Array.from({ length: rows }, () => Array(columns).fill(0))
+    const dx = Math.floor((columns - this.columns) / 2), dy = rows - this.rows
+    for (let y = 0; y < this.rows; y++) for (let x = 0; x < this.columns; x++) {
+      if (y + dy >= 0 && y + dy < rows && x + dx >= 0 && x + dx < columns) board[y + dy][x + dx] = this.board[y][x]
+    }
+    const age = this.age, kind = (this.piece?.color ?? 1) - 1
+    this.clearing = this.clearing.map(y => y + dy).filter(y => y >= 0 && y < rows)
+    this.columns = columns; this.rows = rows; this.board = board
+    if (this.stage === "fall") { this.spawn(kind); this.age = Math.min(age, this.duration) }
+    else this.piece = undefined
+  }
   private random() { this.seed = (Math.imul(this.seed, 1664525) + 1013904223) >>> 0; return this.seed / 4294967296 }
   private reset() {
     this.board = Array.from({ length: this.rows }, () => Array(this.columns).fill(0))

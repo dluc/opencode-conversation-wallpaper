@@ -1,7 +1,7 @@
 /** Original generated maze and autonomous match; no borrowed maps, characters, or assets. */
 export class MazeGame {
-  readonly columns = 23
-  readonly rows = 15
+  columns: number
+  rows: number
   walls: boolean[] = []
   pellets = new Set<number>()
   powers = new Set<number>()
@@ -23,7 +23,14 @@ export class MazeGame {
   private seed = 173
   private home = 0
   private starts: number[] = []
-  constructor() { this.reset() }
+  private nextLayout: { columns: number; rows: number } | undefined
+  constructor(columns = 23, rows = 15) {
+    this.columns = Math.max(11, Math.min(61, Math.floor(columns / 2) * 2 + 1))
+    this.rows = Math.max(7, Math.min(41, Math.floor(rows / 2) * 2 + 1))
+    this.reset()
+  }
+  /** Keep the active maze/positions intact; a fresh round adopts the latest aspect ratio. */
+  setNextLayout(columns: number, rows: number) { this.nextLayout = { columns, rows } }
   private random() { this.seed = (Math.imul(this.seed, 1664525) + 1013904223) >>> 0; return this.seed / 4294967296 }
   neighbors(tile: number) {
     const x = tile % this.columns, y = Math.floor(tile / this.columns)
@@ -32,6 +39,11 @@ export class MazeGame {
       .map(([a, b]) => b * this.columns + a).filter(id => !this.walls[id])
   }
   private reset() {
+    if (this.nextLayout) {
+      this.columns = Math.max(11, Math.min(61, Math.floor(this.nextLayout.columns / 2) * 2 + 1))
+      this.rows = Math.max(7, Math.min(41, Math.floor(this.nextLayout.rows / 2) * 2 + 1))
+      this.nextLayout = undefined
+    }
     this.walls = Array(this.columns * this.rows).fill(true)
     const start = this.columns + 1, stack = [start]
     this.walls[start] = false
