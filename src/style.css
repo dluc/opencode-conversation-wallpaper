@@ -28,6 +28,7 @@
 .cw-preview-copy { position: relative; z-index: 1; padding: 30px; pointer-events: none; }
 .cw-preview-copy strong { display: block; margin-top: 20px; font-size: 25px; line-height: 1.25; letter-spacing: -.035em; font-weight: 530; }
 .cw-preview-copy p { margin-top: 14px; opacity: .7; font-size: 12px; }
+.cw-motion-status { margin: 10px 0 0; font-size: 12px; opacity: .8; }
 .cw-controls { display: grid; gap: 26px; padding: 28px 0; }
 .cw-mode { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .cw-mode legend { margin-bottom: 10px; font-size: 13px; font-weight: 550; }

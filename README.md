@@ -4,11 +4,12 @@ Local image backgrounds and Matrix-style digital rain, behind conversations only
 
 ## Features
 
-- Built-in green digital rain, enabled by default at 75% dimming.
+- Built-in green digital rain, enabled by default at 55% dimming with smooth movement between cells.
 - Import a local PNG, JPEG, GIF, WebP or AVIF (up to 8 MB). PNG/WebP animations are supported when Chromium decodes them.
 - Image fill/contain, dimming, rain speed, and pause controls with a live preview.
 - Animated images are frozen using a canvas snapshot, not an ineffective CSS animation pause.
-- Honors system reduced motion. Rain stops and images freeze when the timeline or app document is hidden.
+- Honors system reduced motion by default, with an explicit opt-out. Rain stops and images freeze when the timeline or app document is hidden.
+- Live preview status explains pauses and reports actual painted rain frames. A **Make rain more visible** preset sets 40% dimming and 1.2× speed.
 - Canvas rain capped at 24 fps and 2× pixel density.
 - Settings persist across sessions and apply to all workspaces. No model calls, remote image requests, or uploads.
 - Command-palette actions to open settings, hide/show wallpaper, and pause/resume animation.
@@ -62,7 +63,27 @@ OpenCode watches configuration changes. Look under **Settings → Conversation w
 **Settings → Extensions → Plugins**. This package has only a GUI entry; it adds no server tools or hooks.
 
 Choose **Your image → Choose image…** to import an image, or keep **Digital rain** for the Matrix effect.
-Try 70–85% dimming for comfortable reading. A dark app theme suits digital rain best.
+Try 35–55% dimming if the effect is too faint; increase it for quieter reading. A dark app theme suits digital rain best.
+
+### Updating from 0.1.0 / faint or static rain
+
+```sh
+opencode plugin update github:dluc/opencode-conversation-wallpaper
+```
+
+In **Settings → Conversation wallpaper**, choose **Make rain more visible**. Existing preferences are preserved
+when updating, so an old 75% dimming setting does not change until you adjust it or use the preset.
+
+The text below the preview tells you why motion is paused (manual pause, system Reduce motion, or hidden/offscreen),
+or displays a count of actual painted frames. The original effect combined 75% dimming with already-translucent
+glyphs, and moved in discrete grid steps; version 0.1.1 brightens the trails and moves them smoothly.
+
+If the status reports your system's Reduce motion setting, leave it paused if that is your preference, or explicitly
+turn off **Follow system Reduce motion** to animate this wallpaper without changing macOS accessibility settings.
+**Pause animation** still always takes precedence. The brighter preset does not override system reduced motion.
+
+If the preview animates but a conversation does not, report your Desktop version and whether dimming changes are visible
+in the conversation. Do not remove theme overlays or lower message opacity to compensate; the host DOM adapter may need updating.
 
 To disable the entire GUI, use its switch in **Settings → Extensions → Plugins**. To uninstall:
 
@@ -79,7 +100,7 @@ observers, and animation frames when unloaded. Stored preferences/images may rem
   App-data backups may contain the image. **Remove image** clears the current stored image, not old backups.
 - SVG, HTML, external image URLs, and local filesystem URLs are deliberately not accepted.
 - This extension never reads messages or composer text. Wallpaper layers ignore pointer events and are hidden from assistive technology.
-- Reduced motion and **Pause animation** override image animation. Resuming a GIF may restart it.
+- Reduced motion (unless explicitly opted out) and **Pause animation** override image animation. Resuming a GIF may restart it.
   Paused snapshots are capped at 2048 pixels on their longest edge to bound memory use.
 - The documented `Style` API supplies CSS, but OpenCode does not offer a dedicated timeline-background slot.
   `src/wallpaper.ts` isolates the necessary internal DOM integration: it finds `session-timeline-scroll` only when

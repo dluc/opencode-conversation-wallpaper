@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 import { defaults } from "../src/preferences"
-import { mountWallpaper, timelineHost, watchTimelines } from "../src/wallpaper"
+import { mountWallpaper, statusMessage, timelineHost, watchTimelines } from "../src/wallpaper"
 import { drawing, frames, intersect, intersections, mediaListeners, resizes, runFrame, setReduced, visibility } from "./environment"
 
 function timeline() {
@@ -24,7 +24,7 @@ describe("wallpaper lifecycle", () => {
     expect(host.querySelector("p")!.textContent).toBe("Conversation text")
     expect(host.querySelector("canvas")!.width).toBe(1600)
     expect(host.querySelector(".cw-layer")!.getAttribute("aria-hidden")).toBe("true")
-    expect((host.firstElementChild as HTMLElement).style.opacity).toBe("0.25")
+    expect(Number((host.firstElementChild as HTMLElement).style.opacity)).toBeCloseTo(0.45)
     expect(frames.size).toBe(0) // not yet visible
     intersect(true)
     expect(frames.size).toBe(1)
@@ -57,6 +57,27 @@ describe("wallpaper lifecycle", () => {
     expect(frames.size).toBe(0)
     intersect(true)
     controller.update({ ...defaults, enabled: false })
+    expect(frames.size).toBe(0)
+    controller.dispose()
+  })
+  it("reports why animation stopped, counts advancing frames, and only overrides reduced motion by explicit choice", () => {
+    setReduced(true)
+    const report = vi.fn()
+    // Missing preference is an existing 0.1.0 installation: keep respecting the OS.
+    const prefs = { ...defaults, respectReducedMotion: undefined }
+    const controller = mountWallpaper(timeline(), prefs, vi.fn(), report)
+    intersect(true)
+    expect(report.mock.lastCall![0].reason).toBe("reduced-motion")
+    expect(statusMessage(report.mock.lastCall![0])).toContain("system’s Reduce motion")
+    expect(frames.size).toBe(0)
+    controller.update({ ...prefs, respectReducedMotion: false })
+    expect(frames.size).toBe(1)
+    runFrame(100)
+    runFrame(150)
+    expect(report.mock.lastCall![0]).toMatchObject({ reason: "rain", frames: 1, width: 800, height: 600 })
+    expect(statusMessage(report.mock.lastCall![0])).toContain("1 frames painted")
+    controller.update({ ...prefs, respectReducedMotion: false, paused: true })
+    expect(report.mock.lastCall![0].reason).toBe("paused")
     expect(frames.size).toBe(0)
     controller.dispose()
   })

@@ -32,10 +32,11 @@ export class Rain {
       stream.head += delta * stream.speed
       if ((stream.head - stream.length) * cell > this.height) stream.head = -Math.random() * 12
       for (let tail = stream.length; tail >= 0; tail--) {
-        const row = Math.floor(stream.head) - tail
+        // Move smoothly between cells, rather than looking static for several frames.
+        const row = stream.head - tail
         if (row < 0 || row * cell > this.height + cell) continue
-        const index = Math.abs(Math.floor(stream.seed + row * 17 + this.time * 2)) % glyphs.length
-        ctx.fillStyle = tail === 0 ? "#d2ffe3" : `rgba(36, 231, 110, ${0.08 + (1 - tail / stream.length) * 0.8})`
+        const index = Math.abs(Math.floor(stream.seed + Math.floor(row) * 17 + this.time * 2)) % glyphs.length
+        ctx.fillStyle = tail === 0 ? "#d2ffe3" : `rgba(36, 231, 110, ${0.15 + (1 - tail / stream.length) * 0.85})`
         ctx.fillText(glyphs[index], column * cell + cell / 2, row * cell)
       }
     })

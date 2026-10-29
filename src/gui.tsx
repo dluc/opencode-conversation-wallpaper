@@ -2,7 +2,7 @@ import { Command, Plugin, SettingsPage, Slot, Store, Style } from "@opencode/plu
 import { Schema } from "effect"
 import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js"
 import { defaults, validateImage, type Preferences } from "./preferences"
-import { mountWallpaper, watchTimelines } from "./wallpaper"
+import { mountWallpaper, statusMessage, watchTimelines, type WallpaperStatus } from "./wallpaper"
 import css from "./style.css?inline"
 
 const PreferencesSchema = Schema.Struct({
@@ -13,6 +13,7 @@ const PreferencesSchema = Schema.Struct({
   dimming: Schema.Number,
   speed: Schema.Number,
   paused: Schema.Boolean,
+  respectReducedMotion: Schema.optionalKey(Schema.Boolean),
   fit: Schema.Literals(["cover", "contain"]),
 })
 
@@ -20,7 +21,12 @@ export default Plugin.define({
   stores: { preferences: Store.global(PreferencesSchema, defaults) },
   setup(ctx) {
     ctx.add(Style, css)
-    const prefs = () => ctx.stores.preferences.value
+    // Read every field before passing preferences into imperative rendering. Its
+    // short-circuit branches must not decide which store changes effects track.
+    const prefs = (): Preferences => ({
+      ...ctx.stores.preferences.value,
+      respectReducedMotion: ctx.stores.preferences.value.respectReducedMotion,
+    })
     const change = <K extends keyof Preferences>(key: K, value: Preferences[K]) => {
       ctx.stores.preferences.update((draft) => { draft[key] = value })
     }
@@ -45,17 +51,20 @@ export default Plugin.define({
 
     function Preview() {
       let host!: HTMLDivElement
+      const [status, setStatus] = createSignal<WallpaperStatus>()
       onMount(() => {
-        const wallpaper = mountWallpaper(host, prefs(), reportError)
+        const wallpaper = mountWallpaper(host, prefs(), reportError, setStatus)
         createEffect(() => { wallpaper.update(prefs()) })
         onCleanup(wallpaper.dispose)
       })
-      return <div ref={host} class="cw-preview" aria-label="Wallpaper preview">
+      return <><div ref={host} class="cw-preview" aria-label="Wallpaper preview">
         <div class="cw-preview-copy"><span class="cw-kicker">LIVE PREVIEW</span>
           <strong>A little atmosphere.<br />A clear train of thought.</strong>
           <p>Your conversations stay in the foreground.</p>
         </div>
       </div>
+        <p class="cw-motion-status">{status() ? statusMessage(status()!) : "Preparing preview…"}</p>
+      </>
     }
 
     function Settings() {
@@ -128,16 +137,24 @@ export default Plugin.define({
           <label class="cw-range"><span>Dimming <output>{prefs().dimming}%</output></span>
             <input type="range" aria-label="Dimming" min="0" max="100" step="1" value={prefs().dimming}
               onChange={(event) => change("dimming", event.currentTarget.valueAsNumber)} />
-            <small>Higher dimming makes messages easier to read. Try 70–85%.</small>
+            <small>Only the wallpaper is faded, never the messages. Try 35–55% if it is too faint.</small>
           </label>
           <Show when={prefs().mode === "matrix"}>
+            <ui.Button onClick={() => {
+              ctx.stores.preferences.update((draft) => {
+                draft.enabled = true; draft.dimming = 40; draft.speed = 1.2; draft.paused = false
+              })
+            }}>Make rain more visible</ui.Button>
             <label class="cw-range"><span>Rain speed <output>{prefs().speed.toFixed(1)}×</output></span>
               <input type="range" aria-label="Rain speed" min="0.2" max="2" step="0.1" value={prefs().speed}
                 onChange={(event) => change("speed", event.currentTarget.valueAsNumber)} />
             </label>
           </Show>
           <ui.Switch label="Pause animation" checked={prefs().paused} onChange={(value) => change("paused", value)}
-            description="Freezes digital rain and animated images. Your system’s reduced-motion preference also pauses animation." />
+            description="Freezes digital rain and animated images." />
+          <ui.Switch label="Follow system Reduce motion" checked={prefs().respectReducedMotion !== false}
+            onChange={(value) => change("respectReducedMotion", value)}
+            description="Enabled by default. Turn off only if you explicitly want wallpaper animation despite your system’s reduced-motion preference." />
         </div>
         <footer class="cw-footer">LOCAL ONLY <span>·</span> NO MODEL CALLS <span>·</span> NO REMOTE ASSETS</footer>
       </section>

@@ -7,6 +7,7 @@ export interface Preferences {
   dimming: number
   speed: number
   paused: boolean
+  respectReducedMotion?: boolean
   fit: "cover" | "contain"
 }
 
@@ -15,9 +16,10 @@ export const defaults: Preferences = {
   mode: "matrix",
   image: "",
   imageName: "",
-  dimming: 75,
+  dimming: 55,
   speed: 1,
   paused: false,
+  respectReducedMotion: true,
   fit: "cover",
 }
 

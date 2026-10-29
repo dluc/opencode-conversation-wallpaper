@@ -6,6 +6,29 @@ export interface Wallpaper {
   dispose(): void
 }
 
+export interface WallpaperStatus {
+  reason: "disabled" | "paused" | "reduced-motion" | "hidden" | "offscreen" | "no-size" | "no-canvas" | "no-image" | "image" | "rain"
+  frames: number
+  width: number
+  height: number
+  opacity: number
+}
+
+export function statusMessage(status: WallpaperStatus): string {
+  switch (status.reason) {
+    case "disabled": return "Wallpaper is switched off."
+    case "paused": return "Animation paused by the Pause animation switch."
+    case "reduced-motion": return "Animation paused by your system’s Reduce motion setting."
+    case "hidden": return "Animation paused while the app document is hidden."
+    case "offscreen": return "Animation paused while this wallpaper is offscreen."
+    case "no-size": return "Waiting for the conversation layout to have a visible size."
+    case "no-canvas": return "Canvas rendering is unavailable in this window."
+    case "no-image": return "Choose an image to display a wallpaper."
+    case "image": return "Image displayed. Animated image playback is allowed."
+    case "rain": return status.frames ? `Digital rain is animating · ${status.frames} frames painted.` : "Digital rain is waiting for its first animation frame."
+  }
+}
+
 /** Only this adapter knows the host's internal DOM. Fail closed if its layout changes. */
 export const TIMELINE_SELECTOR = '[data-slot="session-timeline-scroll"]'
 export function timelineHost(scroll: Element): HTMLElement | undefined {
@@ -14,7 +37,8 @@ export function timelineHost(scroll: Element): HTMLElement | undefined {
   return parent?.querySelector(':scope > [data-slot="session-timeline-visible"]') ? parent : undefined
 }
 
-export function mountWallpaper(host: HTMLElement, initial: Preferences, reportError: (message: string) => void): Wallpaper {
+export function mountWallpaper(host: HTMLElement, initial: Preferences, reportError: (message: string) => void,
+  reportStatus?: (status: WallpaperStatus) => void): Wallpaper {
   const layer = document.createElement("div")
   layer.className = "cw-layer"
   layer.setAttribute("aria-hidden", "true")
@@ -40,16 +64,34 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
   let failedSource = ""
   let frozen = false
   let source = ""
+  let paintedFrames = 0
+  let lastStatusTime = 0
 
-  const animated = () => !prefs.paused && !reduced.matches && visible && !document.hidden
+  const reducedMotion = () => reduced.matches && prefs.respectReducedMotion !== false
+  const animated = () => !prefs.paused && !reducedMotion() && visible && !document.hidden
+  const status = () => {
+    const reason: WallpaperStatus["reason"] = !prefs.enabled ? "disabled" : prefs.mode === "matrix" && !context ? "no-canvas"
+      : prefs.mode === "image" && !imageSource(prefs.image) ? "no-image" : prefs.paused ? "paused"
+      : reducedMotion() ? "reduced-motion" : document.hidden ? "hidden" : !visible ? "offscreen"
+      : !width || !height ? "no-size" : prefs.mode === "matrix" ? "rain" : "image"
+    layer.dataset.motion = reason
+    layer.dataset.frames = String(paintedFrames)
+    reportStatus?.({ reason, frames: paintedFrames, width, height, opacity: 1 - clamp(prefs.dimming, 0, 100) / 100 })
+  }
   const stop = () => { cancelAnimationFrame(frame); frame = 0; previous = 0 }
   const paint = (elapsed: number) => { if (context) rain.draw(context, elapsed, prefs.speed) }
   const tick = (now: number) => {
     frame = 0
-    if (disposed || !animated() || prefs.mode !== "matrix" || !prefs.enabled) return
+    if (disposed) return
+    if (!animated() || prefs.mode !== "matrix" || !prefs.enabled) { status(); return }
     // Limit to 24fps. Text streaming and interaction retain priority.
     if (!previous || now - previous >= 1000 / 24) {
-      paint(previous ? (now - previous) / 1000 : 0)
+      const elapsed = previous ? (now - previous) / 1000 : 0
+      paint(elapsed)
+      if (elapsed) {
+        paintedFrames++
+        if (paintedFrames === 1 || now - lastStatusTime >= 1000) { lastStatusTime = now; status() }
+      }
       previous = now
     }
     frame = requestAnimationFrame(tick)
@@ -103,6 +145,7 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
       paint(0)
       if (animated() && context && width && height) frame = requestAnimationFrame(tick)
     }
+    status()
   }
 
   image.onload = () => { if (!animated()) freeze() }
