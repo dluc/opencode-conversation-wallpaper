@@ -6,6 +6,9 @@ import { BlockfallScene, MazeChaseScene } from "./scenes-games"
 import { PixelClouds, TrainWindow, PixelAquarium, RipplePond } from "./scenes-retro"
 import { Cardiogram, FlowingRiver, PedestrianPlaza } from "./scenes-flow"
 import { GameOfLife } from "./scenes-life"
+import { Glass, Ocean, Coast, Embers, Leaves } from "./scenes-landscapes"
+import { Constellations, Orbits, Boats, Contours } from "./scenes-patterns"
+import { Tremor, Polygraph } from "./scenes-instruments"
 export type { Appearance, Scene } from "./scene"
 
 export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; description: string }> = [
@@ -24,10 +27,21 @@ export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; descrip
   { id: "train-window", title: "Journey", description: "Parallax hills · A quiet journey" },
   { id: "aquarium", title: "Aquarium", description: "Swimming fish · Rising bubbles" },
   { id: "ripple-pond", title: "Ripples", description: "Gentle rain · Expanding rings" },
-  { id: "cardiogram", title: "Cardiogram", description: "Simple pulse · Decorative waveform" },
+  { id: "cardiogram", title: "Cardiogram", description: "Fixed line · Beats in place" },
   { id: "river", title: "River", description: "Winding water · Drifting currents" },
   { id: "life", title: "Life", description: "Evolving cells · Conway’s rules" },
   { id: "plaza", title: "Plaza", description: "Busy open space · People passing by" },
+  { id: "constellations", title: "Constellations", description: "Connected stars · Gentle drift" },
+  { id: "glass", title: "Glass", description: "Rain on a window · Sliding droplets" },
+  { id: "ocean", title: "Ocean", description: "Layered waves · Open water" },
+  { id: "embers", title: "Embers", description: "Warm sparks · Rising softly" },
+  { id: "coast", title: "Coast", description: "Retro beach · Approaching waves" },
+  { id: "boats", title: "Boats", description: "Paper boats · Drifting wakes" },
+  { id: "orbits", title: "Orbits", description: "Miniature worlds · Elliptical paths" },
+  { id: "leaves", title: "Leaves", description: "Autumn colors · Turning in the breeze" },
+  { id: "contours", title: "Contours", description: "Topographic lines · Slow morphing" },
+  { id: "tremor", title: "Tremor", description: "Seismic-style vibrations · Decorative only" },
+  { id: "polygraph", title: "Polygraph", description: "Three wavering traces · Decorative only" },
 ]
 
 export function wallpaperName(mode: string): string {
@@ -211,5 +225,16 @@ export function createScene(mode: BuiltinMode): Scene {
     case "river": return new FlowingRiver()
     case "life": return new GameOfLife()
     case "plaza": return new PedestrianPlaza()
+    case "constellations": return new Constellations()
+    case "glass": return new Glass()
+    case "ocean": return new Ocean()
+    case "embers": return new Embers()
+    case "coast": return new Coast()
+    case "boats": return new Boats()
+    case "orbits": return new Orbits()
+    case "leaves": return new Leaves()
+    case "contours": return new Contours()
+    case "tremor": return new Tremor()
+    case "polygraph": return new Polygraph()
   }
 }

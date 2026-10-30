@@ -4,7 +4,7 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 
 [Install](#install) · [Upgrade an existing installation](#upgrade-an-existing-installation) · [Development](#development)
 
-![Wallpaper gallery with nineteen single-word names and an Image upload option](docs/images/collection.png)
+![Wallpaper gallery with thirty single-word names and an Image upload option](docs/images/collection.png)
 
 ## The collection
 
@@ -25,10 +25,21 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 | **Journey** | Trees and hills scrolling past at different depths |
 | **Aquarium** | Small pixel fish swimming independently, with bubbles and swaying plants |
 | **Ripples** | Expanding, fading rings from occasional raindrops |
-| **Cardiogram** | A simple repeating pulse scrolling across the screen |
+| **Cardiogram** | A fixed horizontal line that spikes in place, then settles flat between beats |
 | **River** | Currents following a winding river channel |
 | **Life** | A living cell grid evolving under Conway’s B3/S23 rules |
 | **Plaza** | A busy open space with many small people walking in and out |
+| **Constellations** | Drifting stars joined by faint lines |
+| **Glass** | Droplets and sliding streaks on a misty window |
+| **Ocean** | Calm layered waves across open water |
+| **Embers** | Warm glowing sparks rising softly |
+| **Coast** | A retro pixel beach with waves approaching the shore |
+| **Boats** | Paper boats drifting with gentle wakes |
+| **Orbits** | Miniature worlds following elliptical paths |
+| **Leaves** | Autumn leaves drifting, turning, and swaying |
+| **Contours** | Slowly morphing topographic lines |
+| **Tremor** | Seismograph-style vibrations alternating between bursts and quieter intervals |
+| **Polygraph** | Three independently wavering, instrument-style traces |
 | **Image** | A still or animated local image, displayed as-is |
 
 Each built-in wallpaper defines its own movement; there is no direction control. Select one from the gallery,
@@ -53,7 +64,18 @@ selections, preferences, or uploaded images; only display names changed. **Mist*
 | ![Chunky pixel clouds drifting across a dark sky in several layers](docs/images/pixel-clouds-dark.png) | ![A busy light-colored plaza with many tiny pedestrians crossing in different directions](docs/images/plaza-light.png) |
 
 These are real renderer captures from the mock desktop test layout, paused for screenshots—not screenshots of a live
-OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All nineteen built-ins animate.
+OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All thirty built-ins animate.
+
+### Instrument-style lines
+
+| Cardiogram · fixed pulse | Tremor · vibration bursts | Polygraph · three traces |
+| --- | --- | --- |
+| ![A single heartbeat-like spike at a fixed position on an otherwise horizontal line](docs/images/cardiogram-dark.png) | ![An amber seismograph-style line vibrating around its baseline](docs/images/tremor-dark.png) | ![Three colored instrument-style traces wavering independently](docs/images/polygraph-dark.png) |
+
+Cardiogram does not scroll: its pulse stays centered, changes height briefly, and then rests flat. Tremor has irregular
+seismic-style bursts; Polygraph has three quieter channels with moving pen points. These are **decorative animations
+only**: there are no medical or seismic measurements, fabricated readings, lie detection, or assessments of anyone.
+They do not react to typing, microphone/camera data, conversation text, or the assistant's answers.
 
 **Life** implements Conway’s Game of Life, with toroidal edge wrapping and smoothly blended generations. Dead,
 short-cycling, or long-running worlds fade into fresh seeds so it remains interesting indefinitely. Evolution freezes
@@ -61,7 +83,7 @@ when paused or hidden and does not reset merely because the conversation is resi
 
 **Plaza** uses 180–360 small procedural people, with varied coats, walking gaits, speeds, and routes. They enter
 and leave beyond the edges of the available space. This is a lightweight decorative crowd, not collision-aware crowd
-simulation. **Cardiogram** is a decorative pulse only, not a medical monitor or a display of actual vital signs.
+simulation. The instrument-style wallpapers likewise use only procedural motion, not real-world observations.
 
 ### Games that keep playing
 
@@ -90,7 +112,7 @@ Maze scales the current match immediately, then generates a grid suited to the n
 - Honors system reduced motion by default, with an explicit opt-out. Built-ins stop and images freeze when the timeline or app document is hidden.
 - Live preview status explains pauses and reports actual painted frames. A **Make wallpaper more visible** preset sets 40% dimming and 1.2× speed.
 - Canvas effects capped at 24 fps and 2× pixel density. Cloud and firefly glow textures are cached; particle counts are bounded.
-- Nineteen atmospheres spanning retro scenery, nature, space, autonomous games, cellular evolution, a decorative pulse, and a busy crowd.
+- Thirty atmospheres spanning retro scenery, nature, space, autonomous games, cellular evolution, instrument-style lines, and a busy crowd.
 - Clouds, fireflies, and stars automatically adapt to the app's light or dark appearance. Light mode uses blue-gray mist,
   amber fireflies, and ink-blue stars; the original dark palettes are preserved. Paused wallpapers and gallery thumbnails
   repaint when you switch themes, while uploaded images keep their original colors.
@@ -189,7 +211,7 @@ were tested with the native v2.2.2 Linux CLI using isolated config/data/cache/st
 browser tests below, not a macOS Desktop test.
 
 To deliberately pin a release for reproducibility, new installations can use
-`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.4.1'`. To change an existing pin, use the same remove/add
+`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.5.0'`. To change an existing pin, use the same remove/add
 procedure with the exact old and new targets—not `plugin update` and not a second duplicate entry.
 
 For local development, configure an absolute path to a clone of this repository instead of the Git package.
@@ -265,7 +287,7 @@ Do not add install-time build scripts: the prebuilt package should be usable wit
 
 ### Verification scope
 
-Unit/DOM tests cover all nineteen renderers (motion, still frames, 4× speed, resizing), input restrictions, host detection,
+Unit/DOM tests cover all thirty renderers (motion, still frames, 4× speed, resizing), input restrictions, host detection,
 hidden/paused/disabled states, animation cleanup, image snapshots/errors/removal, and late-mounted/cached timelines.
 Chromium tests run the **real plugin setup and settings UI against a mock host**, checking every animation,
 static gallery thumbnails, pause/resume, reduced motion, GIF import/freeze, unchanged still uploads, preserved uploads
@@ -281,12 +303,13 @@ actual Canvas playfield calls at landscape, portrait, and tiny sizes, checking f
 counters while a paused match is resized.
 Cellular-automaton tests verify still lifes, blinkers, gliders, edge wrapping, bounded reseeding, and paused time. Crowd
 tests verify bounded population and continuous movement through offscreen entry/exit points. The pulse is checked for
-periodicity and its simple waveform shape.
+periodicity, its fixed peak location, and its flat resting interval. Instrument traces have bounded amplitudes and distinct channels;
+the browser also verifies that the heartbeat's peak stays at the same x coordinate as its height changes, then returns flat.
 
 These are not a live OpenCode Desktop installation test. Verify the plugin in your actual app version before
 relying on compatibility. No global OpenCode configuration is modified by the tests or build.
 
-Refresh the nine checked-in README images only after the browser checks succeed:
+Refresh the twelve checked-in README images only after the browser checks succeed:
 
 ```sh
 npm run docs:screenshots

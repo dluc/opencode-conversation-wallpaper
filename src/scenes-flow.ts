@@ -2,21 +2,24 @@ import { AmbientScene } from "./scene"
 import { clamp } from "./preferences"
 import { makePedestrians, pedestrianPosition, type Pedestrian } from "./pedestrians"
 
-/** A decorative repeating pulse, not a measurement or medical monitor. */
-export function pulseAt(phase: number) {
-  const p = ((phase % 1) + 1) % 1
-  const peak = (center: number, width: number) => Math.exp(-(((p - center) / width) ** 2))
-  return 0.1 * peak(0.16, 0.028) - 0.18 * peak(0.37, 0.012) + peak(0.4, 0.009)
-    - 0.35 * peak(0.43, 0.014) + 0.23 * peak(0.62, 0.045)
+/** Fixed spatial pulse, briefly activated once per beat. Nothing translates horizontally. */
+export function cardiogramAt(position: number, time: number) {
+  const phase = ((time + 0.22) % 1.6 + 1.6) % 1.6
+  const envelope = phase < 0.5 ? Math.sin(phase / 0.5 * Math.PI) ** 2 : 0
+  if (!envelope) return 0
+  const peak = (center: number, width: number) => Math.exp(-(((position - center) / width) ** 2))
+  const shape = 0.1 * peak(0.43, 0.018) - 0.18 * peak(0.482, 0.006) + peak(0.5, 0.006)
+    - 0.35 * peak(0.52, 0.009) + 0.23 * peak(0.59, 0.03)
+  return shape * envelope
 }
 
 export class Cardiogram extends AmbientScene {
   protected paint(ctx: CanvasRenderingContext2D) {
     ctx.strokeStyle = this.appearance === "light" ? "#16745e" : "#78d8b0"; ctx.lineWidth = 1.8; ctx.globalAlpha = 0.85
-    const period = Math.max(160, this.width / 3), amplitude = Math.min(75, this.height * 0.24)
+    const amplitude = Math.min(90, this.height * 0.28)
     ctx.beginPath()
     for (let x = 0; x <= this.width; x += 2) {
-      const y = this.height * 0.54 - pulseAt(x / period + this.time * 0.6) * amplitude
+      const y = this.height * 0.54 - cardiogramAt(x / this.width, this.time) * amplitude
       if (!x) ctx.moveTo(x, y); else ctx.lineTo(x, y)
     }
     ctx.stroke()

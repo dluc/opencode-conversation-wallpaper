@@ -28,6 +28,15 @@ try {
       if (String(args[0]).startsWith("ROUND ")) this.canvas.__hud = args[0]
       return text.apply(this, args)
     }
+    const begin = CanvasRenderingContext2D.prototype.beginPath, line = CanvasRenderingContext2D.prototype.lineTo
+    CanvasRenderingContext2D.prototype.beginPath = function (...args) {
+      if (this.canvas.parentElement?.dataset.wallpaper === "cardiogram") this.canvas.__trace = []
+      return begin.apply(this, args)
+    }
+    CanvasRenderingContext2D.prototype.lineTo = function (...args) {
+      if (this.canvas.parentElement?.dataset.wallpaper === "cardiogram") this.canvas.__trace.push(args)
+      return line.apply(this, args)
+    }
   })
   const showPreview = () => page.locator(".cw-preview").scrollIntoViewIfNeeded()
   const setPaused = async value => {
@@ -88,7 +97,7 @@ try {
   await page.screenshot({ path: "test-results/conversation.png", fullPage: true })
 
   await page.getByRole("button", { name: "Wallpaper settings" }).click()
-  assert.equal(await page.getByRole("radio").count(), 20)
+  assert.equal(await page.getByRole("radio").count(), 31)
   assert.equal(await page.getByRole("combobox", { name: /Direction/i }).count(), 0)
   await page.getByRole("radio", { name: /^Rain\b/ }).focus()
   await page.keyboard.press("ArrowRight")
@@ -98,7 +107,9 @@ try {
     ["blockfall", "Blockfall"], ["disco", "Disco"], ["maze-chase", "Maze"],
     ["pixel-clouds", "Clouds"], ["train-window", "Journey"], ["aquarium", "Aquarium"],
     ["ripple-pond", "Ripples"], ["cardiogram", "Cardiogram"], ["river", "River"],
-    ["life", "Life"], ["plaza", "Plaza"]]
+    ["life", "Life"], ["plaza", "Plaza"], ["constellations", "Constellations"], ["glass", "Glass"],
+    ["ocean", "Ocean"], ["embers", "Embers"], ["coast", "Coast"], ["boats", "Boats"], ["orbits", "Orbits"],
+    ["leaves", "Leaves"], ["contours", "Contours"], ["tremor", "Tremor"], ["polygraph", "Polygraph"]]
   for (const [mode, title] of effects) {
     await page.getByRole("radio", { name: new RegExp(`^${title}\\b`) }).check()
     await speed.evaluate(input => { input.value = "4"; input.dispatchEvent(new Event("change", { bubbles: true })) })
@@ -110,6 +121,27 @@ try {
     const still = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
     assert.equal(await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL()), still)
+    if (mode === "cardiogram") {
+      const resetPulse = async () => {
+        await page.getByRole("radio", { name: /^Image\b/ }).check()
+        await page.getByRole("radio", { name: /^Cardiogram\b/ }).check()
+        await showPreview()
+      }
+      await resetPulse()
+      const peak = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.__trace.reduce((a, b) => b[1] < a[1] ? b : a))
+      await setPaused(false)
+      await page.waitForFunction(([x, y]) => {
+        const trace = document.querySelector(".cw-preview canvas").__trace
+        const peak = trace.reduce((a, b) => b[1] < a[1] ? b : a)
+        return Math.abs(peak[0] - x) <= 2 && Math.abs(peak[1] - y) > 2
+      }, peak)
+      await page.waitForFunction(() => {
+        const trace = document.querySelector(".cw-preview canvas").__trace
+        return trace.length && trace.every(([, y]) => y === trace[0][1])
+      })
+      await setPaused(true)
+      await resetPulse() // Documentation shows the fixed spike, not a random quiet interval.
+    }
     if (mode === "blockfall" || mode === "maze-chase") {
       await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "400px" })
       await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height >= 400)
@@ -274,10 +306,11 @@ try {
       ["starfield-light.png", "starfield-light.png"],
       ["blockfall.png", "blockfall-dark.png"], ["maze-chase.png", "maze-chase-dark.png"],
       ["pixel-clouds.png", "pixel-clouds-dark.png"], ["plaza-light.png", "plaza-light.png"],
+      ["cardiogram.png", "cardiogram-dark.png"], ["tremor.png", "tremor-dark.png"], ["polygraph.png", "polygraph-dark.png"],
     ]) await copyFile(`test-results/${source}`, `docs/images/${target}`)
     console.log("README screenshots refreshed in docs/images/ from the verified mock desktop layout.")
   }
-  console.log("Browser checks passed: all 19 animations, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
+  console.log("Browser checks passed: all 30 animations, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
 } finally {
   await browser.close()
   await server.close()
