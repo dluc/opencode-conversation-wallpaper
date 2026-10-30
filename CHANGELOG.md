@@ -3,6 +3,12 @@
 Notable changes to Conversation Wallpaper. Releases are available as Git tags;
 the default branch can be installed and updated with the OpenCode CLI.
 
+## [0.6.0]
+
+- Add Rainbow: one solid full-area background that smoothly cycles the entire color wheel.
+- Use a three-minute loop at 1× speed, theme-appropriate shades/pastels, and shared dimming/pause controls.
+- Verify hue-wheel coverage, looping, and pixel-uniform rendering across the complete canvas.
+
 ## [0.5.1]
 
 - Add the MIT license and SPDX package metadata.
@@ -63,6 +69,7 @@ the default branch can be installed and updated with the OpenCode CLI.
 
 Names above use the current display labels for clarity; older tags may show earlier names.
 
+[0.6.0]: https://github.com/dluc/opencode-conversation-wallpaper/tree/v0.6.0
 [0.5.1]: https://github.com/dluc/opencode-conversation-wallpaper/tree/v0.5.1
 [0.5.0]: https://github.com/dluc/opencode-conversation-wallpaper/tree/v0.5.0
 [0.4.1]: https://github.com/dluc/opencode-conversation-wallpaper/tree/v0.4.1

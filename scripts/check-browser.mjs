@@ -97,7 +97,7 @@ try {
   await page.screenshot({ path: "test-results/conversation.png", fullPage: true })
 
   await page.getByRole("button", { name: "Wallpaper settings" }).click()
-  assert.equal(await page.getByRole("radio").count(), 31)
+  assert.equal(await page.getByRole("radio").count(), 32)
   assert.equal(await page.getByRole("combobox", { name: /Direction/i }).count(), 0)
   await page.getByRole("radio", { name: /^Rain\b/ }).focus()
   await page.keyboard.press("ArrowRight")
@@ -109,7 +109,7 @@ try {
     ["ripple-pond", "Ripples"], ["cardiogram", "Cardiogram"], ["river", "River"],
     ["life", "Life"], ["plaza", "Plaza"], ["constellations", "Constellations"], ["glass", "Glass"],
     ["ocean", "Ocean"], ["embers", "Embers"], ["coast", "Coast"], ["boats", "Boats"], ["orbits", "Orbits"],
-    ["leaves", "Leaves"], ["contours", "Contours"], ["tremor", "Tremor"], ["polygraph", "Polygraph"]]
+    ["leaves", "Leaves"], ["contours", "Contours"], ["tremor", "Tremor"], ["polygraph", "Polygraph"], ["rainbow", "Rainbow"]]
   for (const [mode, title] of effects) {
     await page.getByRole("radio", { name: new RegExp(`^${title}\\b`) }).check()
     await speed.evaluate(input => { input.value = "4"; input.dispatchEvent(new Event("change", { bubbles: true })) })
@@ -121,6 +121,13 @@ try {
     const still = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
     assert.equal(await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL()), still)
+    if (mode === "rainbow") {
+      const uniform = await page.locator(".cw-preview canvas").first().evaluate(canvas => {
+        const pixels = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data
+        return pixels[3] === 255 && pixels.every((value, index) => value === pixels[index % 4])
+      })
+      assert(uniform, "Rainbow must be one opaque solid color over the entire canvas, not a gradient or shapes")
+    }
     if (mode === "cardiogram") {
       const resetPulse = async () => {
         await page.getByRole("radio", { name: /^Image\b/ }).check()
@@ -310,7 +317,7 @@ try {
     ]) await copyFile(`test-results/${source}`, `docs/images/${target}`)
     console.log("README screenshots refreshed in docs/images/ from the verified mock desktop layout.")
   }
-  console.log("Browser checks passed: all 30 animations, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
+  console.log("Browser checks passed: all 31 animations, uniform full-area Rainbow color, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
 } finally {
   await browser.close()
   await server.close()

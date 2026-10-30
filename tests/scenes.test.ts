@@ -64,7 +64,7 @@ describe("wallpaper collection", () => {
   }
   it("offers each built-in exactly once without a user-configurable direction", () => {
     expect(collection.map(scene => scene.id)).toEqual(MODES.filter(mode => mode !== "image"))
-    expect(new Set(collection.map(scene => scene.id)).size).toBe(30)
+    expect(new Set(collection.map(scene => scene.id)).size).toBe(31)
     expect(wallpaperName("image")).toBe("Image")
   })
   it("uses unique single-word display names without changing stored mode IDs", () => {
@@ -75,6 +75,7 @@ describe("wallpaper collection", () => {
       "ripple-pond": "Ripples", cardiogram: "Cardiogram", river: "River", life: "Life", plaza: "Plaza",
       constellations: "Constellations", glass: "Glass", ocean: "Ocean", embers: "Embers", coast: "Coast",
       boats: "Boats", orbits: "Orbits", leaves: "Leaves", contours: "Contours", tremor: "Tremor", polygraph: "Polygraph",
+      rainbow: "Rainbow",
     })
     const titles = [...collection.map(scene => scene.title), wallpaperName("image")]
     expect(titles.every(title => /^\p{L}+$/u.test(title))).toBe(true)
@@ -90,10 +91,12 @@ describe("wallpaper collection", () => {
         clearCommands()
         standard.draw(context, 0.1, 1)
         const normal = commands()
+        const normalColor = drawing.fillStyle
         clearCommands()
         expect(MAX_SPEED).toBe(4)
         maximum.draw(context, 0.025, MAX_SPEED)
         expect(commands()).toEqual(normal)
+        if (entry.id === "rainbow") expect(drawing.fillStyle).toBe(normalColor)
       } finally { random.mockRestore() }
     })
     it(`${entry.title} paints a stable still frame and advances with elapsed time`, () => {
@@ -105,6 +108,7 @@ describe("wallpaper collection", () => {
         clearCommands()
         scene.draw(context, 0, 1)
         const still = commands()
+        const stillColor = drawing.fillStyle
         expect(still.some(calls => calls.length > 0)).toBe(true)
         clearCommands()
         scene.draw(context, 0, 1)
@@ -116,7 +120,8 @@ describe("wallpaper collection", () => {
           clearCommands(); scene.draw(context, 0.1, 1)
           clearCommands(); scene.draw(context, 0.1, 1)
         }
-        expect(commands()).not.toEqual(still)
+        if (entry.id === "rainbow") expect(drawing.fillStyle).not.toBe(stillColor)
+        else expect(commands()).not.toEqual(still)
       } finally { random.mockRestore() }
     })
     it(`${entry.title} scales motion by speed and handles empty/changed layouts`, () => {
@@ -128,9 +133,11 @@ describe("wallpaper collection", () => {
         clearCommands()
         slow.draw(context, 0.1, 0.5)
         const halfSpeed = commands()
+        const halfColor = drawing.fillStyle
         clearCommands()
         fast.draw(context, 0.05, 1)
         expect(commands()).toEqual(halfSpeed)
+        if (entry.id === "rainbow") expect(drawing.fillStyle).toBe(halfColor)
         expect(() => {
           slow.resize(0, 0); slow.draw(context, 0.1, 1)
           slow.resize(1, 1); slow.draw(context, 0.1, 1)

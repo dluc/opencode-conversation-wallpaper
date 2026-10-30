@@ -4,7 +4,7 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 
 [Install](#install) · [Upgrade](#upgrade-an-existing-installation) · [Changelog](CHANGELOG.md) · [Development](#development) · [MIT license](LICENSE)
 
-![Wallpaper gallery with thirty single-word names and an Image upload option](docs/images/collection.png)
+![Wallpaper gallery with thirty-one single-word names and an Image upload option](docs/images/collection.png)
 
 ## The collection
 
@@ -40,6 +40,7 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 | **Contours** | Slowly morphing topographic lines |
 | **Tremor** | Seismograph-style vibrations alternating between bursts and quieter intervals |
 | **Polygraph** | Three independently wavering, instrument-style traces |
+| **Rainbow** | One solid background color slowly cycling through the full color wheel |
 | **Image** | A still or animated local image, displayed as-is |
 
 Each built-in wallpaper defines its own movement; there is no direction control. Select one from the gallery,
@@ -64,7 +65,12 @@ selections, preferences, or uploaded images; only display names changed. **Mist*
 | ![Chunky pixel clouds drifting across a dark sky in several layers](docs/images/pixel-clouds-dark.png) | ![A busy light-colored plaza with many tiny pedestrians crossing in different directions](docs/images/plaza-light.png) |
 
 These are real renderer captures from the mock desktop test layout, paused for screenshots—not screenshots of a live
-OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All thirty built-ins animate.
+OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All thirty-one built-ins animate.
+
+**Rainbow** fills the whole conversation with a single uniform color—no spatial gradient, pattern, or moving shapes.
+It smoothly visits every hue and loops after three minutes at 1× speed (45 seconds at 4×). Dark themes use deeper shades;
+light themes use pastels to preserve text readability. Dimming controls its strength, and pause/reduced motion freezes
+the current color rather than continuing the cycle in the background.
 
 ### Instrument-style lines
 
@@ -112,7 +118,7 @@ Maze scales the current match immediately, then generates a grid suited to the n
 - Honors system reduced motion by default, with an explicit opt-out. Built-ins stop and images freeze when the timeline or app document is hidden.
 - Live preview status explains pauses and reports actual painted frames. A **Make wallpaper more visible** preset sets 40% dimming and 1.2× speed.
 - Canvas effects capped at 24 fps and 2× pixel density. Cloud and firefly glow textures are cached; particle counts are bounded.
-- Thirty atmospheres spanning retro scenery, nature, space, autonomous games, cellular evolution, instrument-style lines, and a busy crowd.
+- Thirty-one atmospheres spanning retro scenery, nature, space, autonomous games, cellular evolution, instrument-style lines, a busy crowd, and a slow solid-color cycle.
 - Clouds, fireflies, and stars automatically adapt to the app's light or dark appearance. Light mode uses blue-gray mist,
   amber fireflies, and ink-blue stars; the original dark palettes are preserved. Paused wallpapers and gallery thumbnails
   repaint when you switch themes, while uploaded images keep their original colors.
@@ -211,7 +217,7 @@ were tested with the native v2.2.2 Linux CLI using isolated config/data/cache/st
 browser tests below, not a macOS Desktop test.
 
 To deliberately pin a release for reproducibility, new installations can use
-`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.5.1'`. To change an existing pin, use the same remove/add
+`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.6.0'`. To change an existing pin, use the same remove/add
 procedure with the exact old and new targets—not `plugin update` and not a second duplicate entry.
 
 For local development, configure an absolute path to a clone of this repository instead of the Git package.
@@ -287,7 +293,7 @@ Do not add install-time build scripts: the prebuilt package should be usable wit
 
 ### Verification scope
 
-Unit/DOM tests cover all thirty renderers (motion, still frames, 4× speed, resizing), input restrictions, host detection,
+Unit/DOM tests cover all thirty-one renderers (motion, still frames, 4× speed, resizing), input restrictions, host detection,
 hidden/paused/disabled states, animation cleanup, image snapshots/errors/removal, and late-mounted/cached timelines.
 Chromium tests run the **real plugin setup and settings UI against a mock host**, checking every animation,
 static gallery thumbnails, pause/resume, reduced motion, GIF import/freeze, unchanged still uploads, preserved uploads
@@ -305,6 +311,8 @@ Cellular-automaton tests verify still lifes, blinkers, gliders, edge wrapping, b
 tests verify bounded population and continuous movement through offscreen entry/exit points. The pulse is checked for
 periodicity, its fixed peak location, and its flat resting interval. Instrument traces have bounded amplitudes and distinct channels;
 the browser also verifies that the heartbeat's peak stays at the same x coordinate as its height changes, then returns flat.
+Rainbow tests verify a complete hue-wheel cycle and seamless looping; browser checks inspect every canvas pixel to
+ensure its fill is a single uniform full-area color, while still animating and respecting pause and theme changes.
 
 These are not a live OpenCode Desktop installation test. Verify the plugin in your actual app version before
 relying on compatibility. No global OpenCode configuration is modified by the tests or build.
