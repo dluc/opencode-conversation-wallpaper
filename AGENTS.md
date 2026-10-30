@@ -5,6 +5,7 @@ Independent Git repository; parent is a workspace, not a monorepo.
 - Target OpenCode V2 Desktop, GUI SDK `@opencode/plugin` 2.2.2. Consult the V2 GUI plugin documentation before changing host integration.
 - GUI-only plugin. Runtime export is the prebuilt `dist/gui-experimental.cjs`; keep it rebuilt with source changes.
 - Keep dependencies development-only. Do not add install-time build scripts.
+- MIT licensed. Keep LICENSE, SPDX package/lockfile metadata, and changelog included in the installable package. Public GitHub installation is CLI-first; do not make GitHub authentication a blanket prerequisite or change repository visibility without the user's direction.
 - Keep internal host selectors in `src/wallpaper.ts`. Fail closed when the expected timeline structure is absent.
 - Wallpaper never reads conversation text or changes message opacity, theme tokens, selection, scrolling, or pointer handling.
 - Thirty built-ins. The catalog covers the original nineteen plus Constellations, Glass, Ocean, Embers, Coast, Boats, Orbits, Leaves, Contours, Tremor, and Polygraph. Each owns its motion; do not expose direction controls. Gallery thumbnails are static. Only built-ins have speed controls; uploads display as-is without added movement or effects.

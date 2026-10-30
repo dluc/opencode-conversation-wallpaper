@@ -2,7 +2,7 @@
 
 A small collection of animated atmospheres and local image backgrounds, behind conversations only.
 
-[Install](#install) · [Upgrade an existing installation](#upgrade-an-existing-installation) · [Development](#development)
+[Install](#install) · [Upgrade](#upgrade-an-existing-installation) · [Changelog](CHANGELOG.md) · [Development](#development) · [MIT license](LICENSE)
 
 ![Wallpaper gallery with thirty single-word names and an Image upload option](docs/images/collection.png)
 
@@ -132,8 +132,8 @@ opencode plugin add github:dluc/opencode-conversation-wallpaper
 ```
 
 This uses OpenCode's standard Git-package installer and updates your global plugin configuration while preserving
-other entries. The repository is private: your computer needs Git credentials with access to it (for example,
-`gh auth login` followed by `gh auth setup-git`). An SSH alternative is:
+other entries. For public GitHub repositories, HTTPS installation does not require GitHub sign-in or an npm account.
+An optional SSH form, using your existing GitHub SSH credentials, is:
 
 ```sh
 opencode plugin add 'git+ssh://git@github.com/dluc/opencode-conversation-wallpaper.git#main'
@@ -211,7 +211,7 @@ were tested with the native v2.2.2 Linux CLI using isolated config/data/cache/st
 browser tests below, not a macOS Desktop test.
 
 To deliberately pin a release for reproducibility, new installations can use
-`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.5.0'`. To change an existing pin, use the same remove/add
+`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.5.1'`. To change an existing pin, use the same remove/add
 procedure with the exact old and new targets—not `plugin update` and not a second duplicate entry.
 
 For local development, configure an absolute path to a clone of this repository instead of the Git package.
@@ -317,12 +317,21 @@ npm run docs:screenshots
 
 Use the same `CHROME_BIN` override as the browser tests if Chromium is already installed. No external images or assets are downloaded.
 
-To rerun the native CLI-only migration check, with Git credentials for this private repository:
+To rerun the native CLI-only migration check:
 
 ```sh
 npm run test:cli
 ```
 
 Set `OPENCODE_TEST_BIN` to an absolute CLI executable path if `opencode` is not on PATH. The test uses fresh directories
-under ignored `test-results/`, preserves Git credentials for downloading the private package, and stops only its own
-isolated service. It never changes your active OpenCode configuration. It checks remove/add and update, not Desktop rendering.
+under ignored `test-results/`, preserves existing Git credentials if access requires them, and stops only its own
+isolated service. It never changes your active OpenCode configuration. It checks remove/add, update, and the installed
+package's MIT metadata, license, and changelog—not Desktop rendering.
+
+## License
+
+[MIT](LICENSE) · Copyright (c) 2026 Devis Lucato.
+
+The license covers this project's original code, documentation, and generated preview images.
+Third-party dependencies retain their respective licenses. The `private` package flag only prevents accidental npm
+publication; it is unrelated to GitHub repository visibility or the permissions granted by the MIT license.

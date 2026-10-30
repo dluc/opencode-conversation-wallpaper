@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises"
+import { mkdir, mkdtemp, readFile, readdir, writeFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import path from "node:path"
 
@@ -55,7 +55,20 @@ try {
   const result = run("plugin", "update", target)
   assert(/No plugin updates available|Updated/.test(result), "Expected a successful update result")
   console.log(result.trim())
-  console.log("Native CLI checks passed: pinned-to-branch remove/add, one wallpaper entry, preserved unrelated config/comment, standard update.")
+  const cache = path.join(root, "cache")
+  let licensedPackage = false
+  for (const file of await readdir(cache, { recursive: true })) {
+    if (!file.endsWith(path.join("node_modules", "opencode-conversation-wallpaper", "package.json"))) continue
+    const manifestPath = path.join(cache, file), manifest = JSON.parse(await readFile(manifestPath, "utf8"))
+    if (manifest.license !== "MIT") continue // The old pinned fixture intentionally predates licensing.
+    const directory = path.dirname(manifestPath)
+    assert((await readFile(path.join(directory, "LICENSE"), "utf8")).startsWith("MIT License\n"))
+    assert((await readFile(path.join(directory, "CHANGELOG.md"), "utf8")).startsWith("# Changelog\n"))
+    assert.equal(manifest.dependencies, undefined)
+    licensedPackage = true
+  }
+  assert(licensedPackage, "The current Git package must contain MIT metadata, LICENSE, and CHANGELOG.md")
+  console.log("Native CLI checks passed: pinned-to-branch remove/add, preserved unrelated config/comment, standard update, packaged MIT license and changelog.")
 } finally {
   console.log(run("service", "stop").trim() || "Isolated service stopped.")
 }
