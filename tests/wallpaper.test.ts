@@ -131,7 +131,7 @@ describe("wallpaper lifecycle", () => {
     expect(frames.size).toBe(1)
     runFrame(100)
     runFrame(150)
-    expect(report.mock.lastCall![0]).toMatchObject({ reason: "animation", name: "Digital rain", frames: 1, width: 800, height: 600 })
+    expect(report.mock.lastCall![0]).toMatchObject({ reason: "animation", name: "Rain", frames: 1, width: 800, height: 600 })
     expect(statusMessage(report.mock.lastCall![0])).toContain("1 frames painted")
     controller.update({ ...prefs, respectReducedMotion: false, paused: true })
     expect(report.mock.lastCall![0].reason).toBe("paused")

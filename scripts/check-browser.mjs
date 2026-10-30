@@ -44,7 +44,7 @@ try {
     return canvas && [...canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data].some((byte, i) => i % 4 === 3 && byte > 0)
   }
   await page.waitForFunction(canvasPainted)
-  await page.getByText(/Digital rain is animating/).waitFor()
+  await page.getByText(/Rain is animating/).waitFor()
   const speed = page.getByRole("slider", { name: "Animation speed", exact: true })
   assert.equal(await speed.getAttribute("max"), "4")
   await speed.evaluate(input => { input.value = "4"; input.dispatchEvent(new Event("change", { bubbles: true })) })
@@ -73,7 +73,7 @@ try {
   await showPreview()
   await page.getByText("Animation paused by your system’s Reduce motion setting.", { exact: true }).waitFor()
   await page.emulateMedia({ reducedMotion: "no-preference" })
-  await page.getByText(/Digital rain is animating/).waitFor()
+  await page.getByText(/Rain is animating/).waitFor()
   await page.getByRole("button", { name: "Make wallpaper more visible" }).click()
   assert.equal(await page.getByRole("slider", { name: "Dimming", exact: true }).inputValue(), "40")
 
@@ -90,17 +90,17 @@ try {
   await page.getByRole("button", { name: "Wallpaper settings" }).click()
   assert.equal(await page.getByRole("radio").count(), 20)
   assert.equal(await page.getByRole("combobox", { name: /Direction/i }).count(), 0)
-  await page.getByRole("radio", { name: /Digital rain/ }).focus()
+  await page.getByRole("radio", { name: /^Rain\b/ }).focus()
   await page.keyboard.press("ArrowRight")
-  assert.equal(await page.getByRole("radio", { name: /Cloud Drift/ }).isChecked(), true)
-  const effects = [["clouds", "Cloud Drift"], ["fireflies", "Fireflies"], ["starfield", "Starfield"], ["aurora", "Aurora"],
-    ["meteors", "Meteor Shower"], ["night-sky", "Night Sky"], ["balls", "Bouncing Balls"],
-    ["blockfall", "Blockfall"], ["disco", "Disco Lights"], ["maze-chase", "Maze Chase"],
-    ["pixel-clouds", "Pixel Clouds"], ["train-window", "Train Window"], ["aquarium", "Pixel Aquarium"],
-    ["ripple-pond", "Ripple Pond"], ["cardiogram", "Cardiogram"], ["river", "Flowing River"],
-    ["life", "Game of Life"], ["plaza", "Pedestrian Plaza"]]
+  assert.equal(await page.getByRole("radio", { name: /^Mist\b/ }).isChecked(), true)
+  const effects = [["clouds", "Mist"], ["fireflies", "Fireflies"], ["starfield", "Starfield"], ["aurora", "Aurora"],
+    ["meteors", "Meteors"], ["night-sky", "Sky"], ["balls", "Bounce"],
+    ["blockfall", "Blockfall"], ["disco", "Disco"], ["maze-chase", "Maze"],
+    ["pixel-clouds", "Clouds"], ["train-window", "Journey"], ["aquarium", "Aquarium"],
+    ["ripple-pond", "Ripples"], ["cardiogram", "Cardiogram"], ["river", "River"],
+    ["life", "Life"], ["plaza", "Plaza"]]
   for (const [mode, title] of effects) {
-    await page.getByRole("radio", { name: new RegExp(title) }).check()
+    await page.getByRole("radio", { name: new RegExp(`^${title}\\b`) }).check()
     await speed.evaluate(input => { input.value = "4"; input.dispatchEvent(new Event("change", { bubbles: true })) })
     await showPreview()
     await page.getByText(new RegExp(`${title} is animating`)).waitFor()
@@ -153,7 +153,7 @@ try {
     input.value = "55"; input.dispatchEvent(new Event("change", { bubbles: true }))
   })
   // Start a fresh paused round to verify orientation independently of autoplay progress.
-  await page.getByRole("radio", { name: /Your image/ }).check()
+  await page.getByRole("radio", { name: /^Image\b/ }).check()
   await page.getByRole("radio", { name: /Blockfall/ }).check()
   await showPreview()
   const orientation = await page.locator(".cw-preview canvas").first().evaluate(canvas => ({ field: canvas.__playfield, blocks: canvas.__blocks }))
@@ -168,9 +168,9 @@ try {
   }, incomingY)
   await setPaused(true)
   for (const [mode, title] of effects.filter(([id]) => id !== "aurora")) {
-    await page.getByRole("radio", { name: new RegExp(title) }).check()
+    await page.getByRole("radio", { name: new RegExp(`^${title}\\b`) }).check()
     const dark = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())
-    const thumbnail = page.getByRole("radio", { name: new RegExp(title) }).locator("..").locator("canvas")
+    const thumbnail = page.getByRole("radio", { name: new RegExp(`^${title}\\b`) }).locator("..").locator("canvas")
     const darkThumbnail = await thumbnail.evaluate(canvas => canvas.toDataURL())
     await page.getByRole("button", { name: "Use light theme", exact: true }).click()
     await page.waitForFunction(previous => document.querySelector(".cw-preview canvas").toDataURL() !== previous, dark)
@@ -204,7 +204,7 @@ try {
     await page.getByRole("button", { name: "Use dark theme", exact: true }).click()
   }
   await setPaused(false)
-  await page.getByRole("radio", { name: /Your image/ }).check()
+  await page.getByRole("radio", { name: /^Image\b/ }).check()
   assert.equal(await page.getByRole("slider", { name: "Animation speed", exact: true }).count(), 0)
   const gif = Buffer.from("R0lGODlhEAAQAIEAAAg4IwAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh+QQACgAAACwAAAAAEAAQAAAIHQABCBxIsKDBgwgTKlzIsKHDhxAjSpxIsaLFgQEBACH5BAEKAAEALAAAAAAQABAAgY//wgAAAAAAAAAAAAgdAAEIHEiwoMGDCBMqXMiwocOHECNKnEixosWBAQEAOw==", "base64")
   await page.locator('input[type="file"]').setInputFiles({ name: "animated-test.gif", mimeType: "image/gif", buffer: gif })
@@ -220,8 +220,8 @@ try {
   await setPaused(false)
   await page.waitForFunction(() => document.querySelector(".cw-preview img").naturalWidth === 16)
   const uploaded = await page.locator(".cw-preview img").getAttribute("src")
-  await page.getByRole("radio", { name: /Cloud Drift/ }).check()
-  await page.getByRole("radio", { name: /Your image/ }).check()
+  await page.getByRole("radio", { name: /^Mist\b/ }).check()
+  await page.getByRole("radio", { name: /^Image\b/ }).check()
   await showPreview()
   await page.waitForFunction(() => document.querySelector(".cw-preview img").naturalWidth === 16)
   assert.equal(await page.locator(".cw-preview img").getAttribute("src"), uploaded)
@@ -250,7 +250,7 @@ try {
 
   await page.locator('input[type="file"]').setInputFiles({ name: "not-an-image.svg", mimeType: "image/svg+xml", buffer: Buffer.from("<svg/>") })
   await page.getByRole("alert").filter({ hasText: "Choose a PNG" }).waitFor()
-  await page.getByRole("radio", { name: /Digital rain/ }).check()
+  await page.getByRole("radio", { name: /^Rain\b/ }).check()
   await page.getByRole("checkbox", { name: /^Enable wallpaper/ }).uncheck()
   assert.equal(await page.locator(".cw-preview .cw-layer").evaluate(layer => layer.hidden), true)
   await page.getByRole("checkbox", { name: /^Enable wallpaper/ }).check()

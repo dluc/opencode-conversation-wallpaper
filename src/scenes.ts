@@ -9,29 +9,29 @@ import { GameOfLife } from "./scenes-life"
 export type { Appearance, Scene } from "./scene"
 
 export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; description: string }> = [
-  { id: "matrix", title: "Digital rain", description: "Falling glyphs · Green phosphor" },
-  { id: "clouds", title: "Cloud Drift", description: "Horizontal drift · Silver-blue mist" },
+  { id: "matrix", title: "Rain", description: "Falling glyphs · Green phosphor" },
+  { id: "clouds", title: "Mist", description: "Horizontal drift · Silver-blue mist" },
   { id: "fireflies", title: "Fireflies", description: "Free wandering · Warm points of light" },
   { id: "starfield", title: "Starfield", description: "Through depth · Quiet cosmic travel" },
   { id: "aurora", title: "Aurora", description: "Flowing ribbons · Teal and violet" },
-  { id: "meteors", title: "Meteor Shower", description: "Diagonal trails · Shooting stars" },
-  { id: "night-sky", title: "Night Sky", description: "Earthbound view · Circling stars" },
-  { id: "balls", title: "Bouncing Balls", description: "Playful motion · Elastic rebounds" },
+  { id: "meteors", title: "Meteors", description: "Diagonal trails · Shooting stars" },
+  { id: "night-sky", title: "Sky", description: "Earthbound view · Circling stars" },
+  { id: "balls", title: "Bounce", description: "Playful motion · Elastic rebounds" },
   { id: "blockfall", title: "Blockfall", description: "Autoplay · Stack at the top" },
-  { id: "disco", title: "Disco Lights", description: "Slow sweeps · No strobe" },
-  { id: "maze-chase", title: "Maze Chase", description: "Autoplay · Collect, evade, repeat" },
-  { id: "pixel-clouds", title: "Pixel Clouds", description: "Retro sky · Chunky drifting clouds" },
-  { id: "train-window", title: "Train Window", description: "Parallax hills · A quiet journey" },
-  { id: "aquarium", title: "Pixel Aquarium", description: "Swimming fish · Rising bubbles" },
-  { id: "ripple-pond", title: "Ripple Pond", description: "Gentle rain · Expanding rings" },
+  { id: "disco", title: "Disco", description: "Slow sweeps · No strobe" },
+  { id: "maze-chase", title: "Maze", description: "Autoplay · Collect, evade, repeat" },
+  { id: "pixel-clouds", title: "Clouds", description: "Retro sky · Chunky drifting clouds" },
+  { id: "train-window", title: "Journey", description: "Parallax hills · A quiet journey" },
+  { id: "aquarium", title: "Aquarium", description: "Swimming fish · Rising bubbles" },
+  { id: "ripple-pond", title: "Ripples", description: "Gentle rain · Expanding rings" },
   { id: "cardiogram", title: "Cardiogram", description: "Simple pulse · Decorative waveform" },
-  { id: "river", title: "Flowing River", description: "Winding water · Drifting currents" },
-  { id: "life", title: "Game of Life", description: "Evolving cells · Conway’s rules" },
-  { id: "plaza", title: "Pedestrian Plaza", description: "Busy open space · People passing by" },
+  { id: "river", title: "River", description: "Winding water · Drifting currents" },
+  { id: "life", title: "Life", description: "Evolving cells · Conway’s rules" },
+  { id: "plaza", title: "Plaza", description: "Busy open space · People passing by" },
 ]
 
 export function wallpaperName(mode: string): string {
-  return collection.find(scene => scene.id === mode)?.title ?? "Your image"
+  return collection.find(scene => scene.id === mode)?.title ?? "Image"
 }
 
 /** Soft light is prerendered once, not rebuilt for every particle on every frame. */

@@ -135,7 +135,7 @@ export default Plugin.define({
               <input type="radio" name="cw-mode" value="image" checked={prefs().mode === "image"}
                 onChange={() => change("mode", "image")} />
               <div class="cw-upload-thumbnail" aria-hidden="true"><span>＋</span><small>BRING YOUR OWN</small></div>
-              <span class="cw-card-copy"><strong>Your image</strong><small>Still or animated · Played as-is</small></span>
+              <span class="cw-card-copy"><strong>Image</strong><small>Still or animated · Played as-is</small></span>
             </label>
           </fieldset>
           <Show when={prefs().mode === "image"}>

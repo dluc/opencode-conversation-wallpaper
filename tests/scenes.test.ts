@@ -65,7 +65,18 @@ describe("wallpaper collection", () => {
   it("offers each built-in exactly once without a user-configurable direction", () => {
     expect(collection.map(scene => scene.id)).toEqual(MODES.filter(mode => mode !== "image"))
     expect(new Set(collection.map(scene => scene.id)).size).toBe(19)
-    expect(wallpaperName("image")).toBe("Your image")
+    expect(wallpaperName("image")).toBe("Image")
+  })
+  it("uses unique single-word display names without changing stored mode IDs", () => {
+    expect(Object.fromEntries(collection.map(({ id, title }) => [id, title]))).toEqual({
+      matrix: "Rain", clouds: "Mist", fireflies: "Fireflies", starfield: "Starfield", aurora: "Aurora",
+      meteors: "Meteors", "night-sky": "Sky", balls: "Bounce", blockfall: "Blockfall", disco: "Disco",
+      "maze-chase": "Maze", "pixel-clouds": "Clouds", "train-window": "Journey", aquarium: "Aquarium",
+      "ripple-pond": "Ripples", cardiogram: "Cardiogram", river: "River", life: "Life", plaza: "Plaza",
+    })
+    const titles = [...collection.map(scene => scene.title), wallpaperName("image")]
+    expect(titles.every(title => /^\p{L}+$/u.test(title))).toBe(true)
+    expect(new Set(titles).size).toBe(titles.length)
   })
   for (const entry of collection) {
     it(`${entry.title} really runs at 4x instead of silently clamping at 2x`, () => {

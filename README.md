@@ -4,60 +4,62 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 
 [Install](#install) · [Upgrade an existing installation](#upgrade-an-existing-installation) · [Development](#development)
 
-![Wallpaper gallery: Digital rain, Cloud Drift, Fireflies, Starfield, Aurora, and Your image](docs/images/collection.png)
+![Wallpaper gallery with nineteen single-word names and an Image upload option](docs/images/collection.png)
 
 ## The collection
 
 | Wallpaper | Its motion |
 | --- | --- |
-| **Digital rain** | Green glyphs falling downward |
-| **Cloud Drift** | Soft silver-blue clouds drifting horizontally |
+| **Rain** | Green glyphs falling downward |
+| **Mist** | Soft silver-blue clouds drifting horizontally |
 | **Fireflies** | Warm glowing particles wandering freely |
 | **Starfield** | Quiet travel through depth, stars moving outward |
 | **Aurora** | Teal and violet ribbons flowing and undulating |
-| **Meteor Shower** | Shooting stars tracing diagonal trails |
-| **Night Sky** | Stars circling a fixed celestial pole, as viewed from Earth |
-| **Bouncing Balls** | Colorful balls rebounding off the edges |
+| **Meteors** | Shooting stars tracing diagonal trails |
+| **Sky** | Stars circling a fixed celestial pole, as viewed from Earth |
+| **Bounce** | Colorful balls rebounding off the edges |
 | **Blockfall** | An inverted block puzzle: pieces rise from below, stack at the top, clear lines, and repeat |
-| **Disco Lights** | Colored spotlights and soft beams sweeping slowly—no strobing |
-| **Maze Chase** | An autonomous maze match: collect, evade sentries, finish, and play a new maze |
-| **Pixel Clouds** | Chunky retro clouds drifting horizontally in three parallax layers |
-| **Train Window** | Trees and hills scrolling past at different depths |
-| **Pixel Aquarium** | Small pixel fish swimming independently, with bubbles and swaying plants |
-| **Ripple Pond** | Expanding, fading rings from occasional raindrops |
+| **Disco** | Colored spotlights and soft beams sweeping slowly—no strobing |
+| **Maze** | An autonomous maze match: collect, evade sentries, finish, and play a new maze |
+| **Clouds** | Chunky retro clouds drifting horizontally in three parallax layers |
+| **Journey** | Trees and hills scrolling past at different depths |
+| **Aquarium** | Small pixel fish swimming independently, with bubbles and swaying plants |
+| **Ripples** | Expanding, fading rings from occasional raindrops |
 | **Cardiogram** | A simple repeating pulse scrolling across the screen |
-| **Flowing River** | Currents following a winding river channel |
-| **Game of Life** | A living cell grid evolving under Conway’s B3/S23 rules |
-| **Pedestrian Plaza** | A busy open space with many small people walking in and out |
-| **Your image** | A still or animated local image, displayed as-is |
+| **River** | Currents following a winding river channel |
+| **Life** | A living cell grid evolving under Conway’s B3/S23 rules |
+| **Plaza** | A busy open space with many small people walking in and out |
+| **Image** | A still or animated local image, displayed as-is |
 
 Each built-in wallpaper defines its own movement; there is no direction control. Select one from the gallery,
 adjust dimming and animation speed, or pause it. Gallery thumbnails are stills, not extra animation loops.
+Names are deliberately short and unique. The single-word labels introduced in v0.4.1 do not change saved wallpaper
+selections, preferences, or uploaded images; only display names changed. **Mist** is the soft cloud effect; **Clouds** is retro.
 
 ### A few moods
 
 | Aurora · dark theme | Fireflies · dark theme |
 | --- | --- |
 | ![Teal and violet aurora ribbons behind readable conversation text in dark mode](docs/images/aurora-dark.png) | ![Soft golden-green fireflies in dark mode](docs/images/fireflies-dark.png) |
-| **Cloud Drift · light theme** | **Starfield · light theme** |
+| **Mist · light theme** | **Starfield · light theme** |
 | ![Soft blue-gray clouds behind dark text on a light background](docs/images/clouds-light.png) | ![Ink-blue stars visible behind conversation text in light mode](docs/images/starfield-light.png) |
 
-| Blockfall · autonomous puzzle | Maze Chase · autonomous match |
+| Blockfall · autonomous puzzle | Maze · autonomous match |
 | --- | --- |
 | ![An original block puzzle with pieces accumulating at the top of the screen](docs/images/blockfall-dark.png) | ![An original generated maze with a diamond courier, collectibles, and circular sentries](docs/images/maze-chase-dark.png) |
 
-| Pixel Clouds · retro sky | Pedestrian Plaza · light theme |
+| Clouds · retro sky | Plaza · light theme |
 | --- | --- |
 | ![Chunky pixel clouds drifting across a dark sky in several layers](docs/images/pixel-clouds-dark.png) | ![A busy light-colored plaza with many tiny pedestrians crossing in different directions](docs/images/plaza-light.png) |
 
 These are real renderer captures from the mock desktop test layout, paused for screenshots—not screenshots of a live
 OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All nineteen built-ins animate.
 
-**Game of Life** is a genuine cellular automaton, with toroidal edge wrapping and smoothly blended generations. Dead,
+**Life** implements Conway’s Game of Life, with toroidal edge wrapping and smoothly blended generations. Dead,
 short-cycling, or long-running worlds fade into fresh seeds so it remains interesting indefinitely. Evolution freezes
 when paused or hidden and does not reset merely because the conversation is resized.
 
-**Pedestrian Plaza** uses 180–360 small procedural people, with varied coats, walking gaits, speeds, and routes. They enter
+**Plaza** uses 180–360 small procedural people, with varied coats, walking gaits, speeds, and routes. They enter
 and leave beyond the edges of the available space. This is a lightweight decorative crowd, not collision-aware crowd
 simulation. **Cardiogram** is a decorative pulse only, not a medical monitor or a display of actual vital signs.
 
@@ -65,7 +67,7 @@ simulation. **Cardiogram** is a decorative pulse only, not a medical monitor or 
 
 **Blockfall** plans legal placements, clears complete rows, and fades into another round when blocked or after a bounded
 45-piece round. Its board is displayed upside down: pieces rise from the bottom and accumulate at the top, keeping the
-lower reading area clearer. Only the board is flipped; score text stays upright. **Maze Chase** generates an original connected maze. A diamond courier collects the board,
+lower reading area clearer. Only the board is flipped; score text stays upright. **Maze** generates an original connected maze. A diamond courier collects the board,
 uses temporary shields, and avoids two circular sentries. It has three lives, win/loss states, and a fresh maze after each
 match; a 90-second simulated-time limit prevents stalled rounds. Both play autonomously and repeat indefinitely.
 
@@ -75,7 +77,7 @@ clock too—there is no invisible background match progressing while you are awa
 
 Both games fill the conversation's available width and height, with only a small edge inset and compact score row—no
 fixed-size centered mini-board. Blockfall adapts its grid and reflows its top-displayed stack as the room changes.
-Maze Chase scales the current match immediately, then generates a grid suited to the new aspect ratio at the next round.
+Maze scales the current match immediately, then generates a grid suited to the new aspect ratio at the next round.
 
 ## Features
 
@@ -135,7 +137,7 @@ OpenCode watches configuration changes. Look under **Settings → Conversation w
 **Conversation wallpaper settings** in the command palette. GUI availability can also be checked under
 **Settings → Extensions → Plugins**. This package has only a GUI entry; it adds no server tools or hooks.
 
-Choose a built-in from the gallery, or **Your image → Choose image…** to import a file.
+Choose a built-in from the gallery, or **Image → Choose image…** to import a file.
 Try 35–55% dimming if the effect is too faint; increase it for quieter reading.
 
 ## Upgrade an existing installation
@@ -187,7 +189,7 @@ were tested with the native v2.2.2 Linux CLI using isolated config/data/cache/st
 browser tests below, not a macOS Desktop test.
 
 To deliberately pin a release for reproducibility, new installations can use
-`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.4.0'`. To change an existing pin, use the same remove/add
+`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.4.1'`. To change an existing pin, use the same remove/add
 procedure with the exact old and new targets—not `plugin update` and not a second duplicate entry.
 
 For local development, configure an absolute path to a clone of this repository instead of the Git package.
