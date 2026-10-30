@@ -5,10 +5,10 @@ import { drawing } from "./environment"
 
 const context = drawing as unknown as CanvasRenderingContext2D
 function commands() {
-  return [drawing.fillText, drawing.drawImage, drawing.arc, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect].map(fn => [...fn.mock.calls])
+  return [drawing.fillText, drawing.drawImage, drawing.arc, drawing.ellipse, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect].map(fn => [...fn.mock.calls])
 }
 function clearCommands() {
-  for (const fn of [drawing.fillText, drawing.drawImage, drawing.arc, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect]) fn.mockClear()
+  for (const fn of [drawing.fillText, drawing.drawImage, drawing.arc, drawing.ellipse, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect]) fn.mockClear()
 }
 
 describe("wallpaper collection", () => {
@@ -64,7 +64,7 @@ describe("wallpaper collection", () => {
   }
   it("offers each built-in exactly once without a user-configurable direction", () => {
     expect(collection.map(scene => scene.id)).toEqual(MODES.filter(mode => mode !== "image"))
-    expect(new Set(collection.map(scene => scene.id)).size).toBe(11)
+    expect(new Set(collection.map(scene => scene.id)).size).toBe(19)
     expect(wallpaperName("image")).toBe("Your image")
   })
   for (const entry of collection) {
@@ -98,6 +98,11 @@ describe("wallpaper collection", () => {
         expect(commands()).toEqual(still)
         clearCommands()
         scene.draw(context, 0.1, 1)
+        if (entry.id === "life") {
+          // Cellular evolution advances once per 0.3 simulated seconds, not on every draw.
+          clearCommands(); scene.draw(context, 0.1, 1)
+          clearCommands(); scene.draw(context, 0.1, 1)
+        }
         expect(commands()).not.toEqual(still)
       } finally { random.mockRestore() }
     })

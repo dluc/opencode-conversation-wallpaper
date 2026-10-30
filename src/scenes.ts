@@ -3,6 +3,9 @@ import { Rain } from "./rain"
 import { AmbientScene, type Appearance, type Scene } from "./scene"
 import { BouncingBalls, DiscoLights, MeteorShower, NightSky } from "./scenes-extra"
 import { BlockfallScene, MazeChaseScene } from "./scenes-games"
+import { PixelClouds, TrainWindow, PixelAquarium, RipplePond } from "./scenes-retro"
+import { Cardiogram, FlowingRiver, PedestrianPlaza } from "./scenes-flow"
+import { GameOfLife } from "./scenes-life"
 export type { Appearance, Scene } from "./scene"
 
 export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; description: string }> = [
@@ -17,6 +20,14 @@ export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; descrip
   { id: "blockfall", title: "Blockfall", description: "Autoplay · Stack at the top" },
   { id: "disco", title: "Disco Lights", description: "Slow sweeps · No strobe" },
   { id: "maze-chase", title: "Maze Chase", description: "Autoplay · Collect, evade, repeat" },
+  { id: "pixel-clouds", title: "Pixel Clouds", description: "Retro sky · Chunky drifting clouds" },
+  { id: "train-window", title: "Train Window", description: "Parallax hills · A quiet journey" },
+  { id: "aquarium", title: "Pixel Aquarium", description: "Swimming fish · Rising bubbles" },
+  { id: "ripple-pond", title: "Ripple Pond", description: "Gentle rain · Expanding rings" },
+  { id: "cardiogram", title: "Cardiogram", description: "Simple pulse · Decorative waveform" },
+  { id: "river", title: "Flowing River", description: "Winding water · Drifting currents" },
+  { id: "life", title: "Game of Life", description: "Evolving cells · Conway’s rules" },
+  { id: "plaza", title: "Pedestrian Plaza", description: "Busy open space · People passing by" },
 ]
 
 export function wallpaperName(mode: string): string {
@@ -192,5 +203,13 @@ export function createScene(mode: BuiltinMode): Scene {
     case "blockfall": return new BlockfallScene()
     case "disco": return new DiscoLights()
     case "maze-chase": return new MazeChaseScene()
+    case "pixel-clouds": return new PixelClouds()
+    case "train-window": return new TrainWindow()
+    case "aquarium": return new PixelAquarium()
+    case "ripple-pond": return new RipplePond()
+    case "cardiogram": return new Cardiogram()
+    case "river": return new FlowingRiver()
+    case "life": return new GameOfLife()
+    case "plaza": return new PedestrianPlaza()
   }
 }

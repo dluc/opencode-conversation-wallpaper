@@ -88,14 +88,17 @@ try {
   await page.screenshot({ path: "test-results/conversation.png", fullPage: true })
 
   await page.getByRole("button", { name: "Wallpaper settings" }).click()
-  assert.equal(await page.getByRole("radio").count(), 12)
+  assert.equal(await page.getByRole("radio").count(), 20)
   assert.equal(await page.getByRole("combobox", { name: /Direction/i }).count(), 0)
   await page.getByRole("radio", { name: /Digital rain/ }).focus()
   await page.keyboard.press("ArrowRight")
   assert.equal(await page.getByRole("radio", { name: /Cloud Drift/ }).isChecked(), true)
   const effects = [["clouds", "Cloud Drift"], ["fireflies", "Fireflies"], ["starfield", "Starfield"], ["aurora", "Aurora"],
     ["meteors", "Meteor Shower"], ["night-sky", "Night Sky"], ["balls", "Bouncing Balls"],
-    ["blockfall", "Blockfall"], ["disco", "Disco Lights"], ["maze-chase", "Maze Chase"]]
+    ["blockfall", "Blockfall"], ["disco", "Disco Lights"], ["maze-chase", "Maze Chase"],
+    ["pixel-clouds", "Pixel Clouds"], ["train-window", "Train Window"], ["aquarium", "Pixel Aquarium"],
+    ["ripple-pond", "Ripple Pond"], ["cardiogram", "Cardiogram"], ["river", "Flowing River"],
+    ["life", "Game of Life"], ["plaza", "Pedestrian Plaza"]]
   for (const [mode, title] of effects) {
     await page.getByRole("radio", { name: new RegExp(title) }).check()
     await speed.evaluate(input => { input.value = "4"; input.dispatchEvent(new Event("change", { bubbles: true })) })
@@ -270,10 +273,11 @@ try {
       ["fireflies.png", "fireflies-dark.png"], ["clouds-light.png", "clouds-light.png"],
       ["starfield-light.png", "starfield-light.png"],
       ["blockfall.png", "blockfall-dark.png"], ["maze-chase.png", "maze-chase-dark.png"],
+      ["pixel-clouds.png", "pixel-clouds-dark.png"], ["plaza-light.png", "plaza-light.png"],
     ]) await copyFile(`test-results/${source}`, `docs/images/${target}`)
     console.log("README screenshots refreshed in docs/images/ from the verified mock desktop layout.")
   }
-  console.log("Browser checks passed: all 11 animations, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
+  console.log("Browser checks passed: all 19 animations, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
 } finally {
   await browser.close()
   await server.close()

@@ -188,7 +188,7 @@ export default Plugin.define({
     ctx.add(SettingsPage, {
       id: "wallpaper", title: "Conversation wallpaper", icon: "settings-gear",
       entries: [
-        { id: "background", title: "Wallpaper collection and uploaded images", keywords: "matrix rain clouds fireflies starfield aurora meteors night sky balls blockfall disco maze chase wallpaper gif animation dimming pause" },
+        { id: "background", title: "Wallpaper collection and uploaded images", keywords: "matrix rain clouds fireflies starfield aurora meteors night sky balls blockfall disco maze pixel train aquarium pond cardiogram river life plaza people wallpaper gif animation dimming pause" },
       ],
       render: () => <Settings />,
     })

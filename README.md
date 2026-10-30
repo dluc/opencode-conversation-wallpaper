@@ -21,6 +21,14 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 | **Blockfall** | An inverted block puzzle: pieces rise from below, stack at the top, clear lines, and repeat |
 | **Disco Lights** | Colored spotlights and soft beams sweeping slowly—no strobing |
 | **Maze Chase** | An autonomous maze match: collect, evade sentries, finish, and play a new maze |
+| **Pixel Clouds** | Chunky retro clouds drifting horizontally in three parallax layers |
+| **Train Window** | Trees and hills scrolling past at different depths |
+| **Pixel Aquarium** | Small pixel fish swimming independently, with bubbles and swaying plants |
+| **Ripple Pond** | Expanding, fading rings from occasional raindrops |
+| **Cardiogram** | A simple repeating pulse scrolling across the screen |
+| **Flowing River** | Currents following a winding river channel |
+| **Game of Life** | A living cell grid evolving under Conway’s B3/S23 rules |
+| **Pedestrian Plaza** | A busy open space with many small people walking in and out |
 | **Your image** | A still or animated local image, displayed as-is |
 
 Each built-in wallpaper defines its own movement; there is no direction control. Select one from the gallery,
@@ -38,8 +46,20 @@ adjust dimming and animation speed, or pause it. Gallery thumbnails are stills, 
 | --- | --- |
 | ![An original block puzzle with pieces accumulating at the top of the screen](docs/images/blockfall-dark.png) | ![An original generated maze with a diamond courier, collectibles, and circular sentries](docs/images/maze-chase-dark.png) |
 
+| Pixel Clouds · retro sky | Pedestrian Plaza · light theme |
+| --- | --- |
+| ![Chunky pixel clouds drifting across a dark sky in several layers](docs/images/pixel-clouds-dark.png) | ![A busy light-colored plaza with many tiny pedestrians crossing in different directions](docs/images/plaza-light.png) |
+
 These are real renderer captures from the mock desktop test layout, paused for screenshots—not screenshots of a live
-OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All eleven built-ins animate.
+OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All nineteen built-ins animate.
+
+**Game of Life** is a genuine cellular automaton, with toroidal edge wrapping and smoothly blended generations. Dead,
+short-cycling, or long-running worlds fade into fresh seeds so it remains interesting indefinitely. Evolution freezes
+when paused or hidden and does not reset merely because the conversation is resized.
+
+**Pedestrian Plaza** uses 180–360 small procedural people, with varied coats, walking gaits, speeds, and routes. They enter
+and leave beyond the edges of the available space. This is a lightweight decorative crowd, not collision-aware crowd
+simulation. **Cardiogram** is a decorative pulse only, not a medical monitor or a display of actual vital signs.
 
 ### Games that keep playing
 
@@ -68,7 +88,7 @@ Maze Chase scales the current match immediately, then generates a grid suited to
 - Honors system reduced motion by default, with an explicit opt-out. Built-ins stop and images freeze when the timeline or app document is hidden.
 - Live preview status explains pauses and reports actual painted frames. A **Make wallpaper more visible** preset sets 40% dimming and 1.2× speed.
 - Canvas effects capped at 24 fps and 2× pixel density. Cloud and firefly glow textures are cached; particle counts are bounded.
-- Six additional atmospheres: meteors, an Earth-view rotating sky, bouncing balls, two autonomous games, and smooth disco lights.
+- Nineteen atmospheres spanning retro scenery, nature, space, autonomous games, cellular evolution, a decorative pulse, and a busy crowd.
 - Clouds, fireflies, and stars automatically adapt to the app's light or dark appearance. Light mode uses blue-gray mist,
   amber fireflies, and ink-blue stars; the original dark palettes are preserved. Paused wallpapers and gallery thumbnails
   repaint when you switch themes, while uploaded images keep their original colors.
@@ -167,7 +187,7 @@ were tested with the native v2.2.2 Linux CLI using isolated config/data/cache/st
 browser tests below, not a macOS Desktop test.
 
 To deliberately pin a release for reproducibility, new installations can use
-`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.3.2'`. To change an existing pin, use the same remove/add
+`opencode plugin add 'github:dluc/opencode-conversation-wallpaper#v0.4.0'`. To change an existing pin, use the same remove/add
 procedure with the exact old and new targets—not `plugin update` and not a second duplicate entry.
 
 For local development, configure an absolute path to a clone of this repository instead of the Git package.
@@ -243,7 +263,7 @@ Do not add install-time build scripts: the prebuilt package should be usable wit
 
 ### Verification scope
 
-Unit/DOM tests cover all eleven renderers (motion, still frames, 4× speed, resizing), input restrictions, host detection,
+Unit/DOM tests cover all nineteen renderers (motion, still frames, 4× speed, resizing), input restrictions, host detection,
 hidden/paused/disabled states, animation cleanup, image snapshots/errors/removal, and late-mounted/cached timelines.
 Chromium tests run the **real plugin setup and settings UI against a mock host**, checking every animation,
 static gallery thumbnails, pause/resume, reduced motion, GIF import/freeze, unchanged still uploads, preserved uploads
@@ -257,11 +277,14 @@ board completion, lost lives, and automatic restarts. Browser checks also exerci
 tiny positive viewport sizes, and switching back to uploaded images in the larger gallery. Responsive-game tests inspect
 actual Canvas playfield calls at landscape, portrait, and tiny sizes, checking full-area coverage and unchanged round
 counters while a paused match is resized.
+Cellular-automaton tests verify still lifes, blinkers, gliders, edge wrapping, bounded reseeding, and paused time. Crowd
+tests verify bounded population and continuous movement through offscreen entry/exit points. The pulse is checked for
+periodicity and its simple waveform shape.
 
 These are not a live OpenCode Desktop installation test. Verify the plugin in your actual app version before
 relying on compatibility. No global OpenCode configuration is modified by the tests or build.
 
-Refresh the seven checked-in README images only after the browser checks succeed:
+Refresh the nine checked-in README images only after the browser checks succeed:
 
 ```sh
 npm run docs:screenshots
