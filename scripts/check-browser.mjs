@@ -3,7 +3,8 @@ import { copyFile, mkdir, writeFile } from "node:fs/promises"
 import { chromium } from "playwright"
 import { createServer } from "vite"
 
-const server = await createServer({ configFile: "vite.preview.config.ts", server: { port: 4322 } })
+const port = Number(process.env.WALLPAPER_TEST_PORT || 4322)
+const server = await createServer({ configFile: "vite.preview.config.ts", server: { port } })
 await server.listen()
 const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, headless: true })
 try {
@@ -45,7 +46,7 @@ try {
   }
   const errors = []
   page.on("pageerror", error => errors.push(error.message))
-  await page.goto("http://localhost:4322/preview/")
+  await page.goto(`http://localhost:${port}/preview/`)
   await page.getByRole("heading", { name: "Set the atmosphere." }).waitFor()
   await page.waitForFunction(() => document.querySelector(".cw-preview canvas").width > 300)
   const canvasPainted = () => {
@@ -97,7 +98,7 @@ try {
   await page.screenshot({ path: "test-results/conversation.png", fullPage: true })
 
   await page.getByRole("button", { name: "Wallpaper settings" }).click()
-  assert.equal(await page.getByRole("radio").count(), 33)
+  assert.equal(await page.getByRole("radio").count(), 34)
   assert.equal(await page.getByRole("combobox", { name: /Direction/i }).count(), 0)
   await page.getByRole("radio", { name: /^Rain\b/ }).focus()
   await page.keyboard.press("ArrowRight")
@@ -109,7 +110,7 @@ try {
     ["ripple-pond", "Ripples"], ["cardiogram", "Cardiogram"], ["river", "River"],
     ["life", "Life"], ["plaza", "Plaza"], ["constellations", "Constellations"], ["glass", "Glass"],
     ["ocean", "Ocean"], ["embers", "Embers"], ["coast", "Coast"], ["boats", "Boats"], ["orbits", "Orbits"],
-    ["leaves", "Leaves"], ["contours", "Contours"], ["tremor", "Tremor"], ["polygraph", "Polygraph"], ["rainbow", "Rainbow"], ["fire", "Fire"]]
+    ["leaves", "Leaves"], ["contours", "Contours"], ["tremor", "Tremor"], ["polygraph", "Polygraph"], ["rainbow", "Rainbow"], ["fire", "Fire"], ["elastic", "Elastic"]]
   for (const [mode, title] of effects) {
     await page.getByRole("radio", { name: new RegExp(`^${title}\\b`) }).check()
     await speed.evaluate(input => { input.value = "4"; input.dispatchEvent(new Event("change", { bubbles: true })) })
@@ -189,6 +190,23 @@ try {
         await writeFile(`test-results/fire-warm-late-${appearance}.png`, Buffer.from(warm.capture.split(",")[1], "base64"))
       }
     }
+    if (mode === "elastic") {
+      const coverage = await page.evaluate(async () => {
+        const { createScene } = await import("/src/scenes.ts")
+        const canvas = document.createElement("canvas"), context = canvas.getContext("2d"), scene = createScene("elastic")
+        const result = []
+        for (const [width, height] of [[1200, 600], [390, 844], [1, 1]]) {
+          canvas.width = width; canvas.height = height; scene.resize(width, height)
+          scene.draw(context, 0, 1, "dark")
+          const pixels = context.getImageData(0, 0, width, height).data
+          let painted = 0
+          for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 20) painted++
+          result.push({ width, height, coverage: painted / (width * height) })
+        }
+        return result
+      })
+      assert(coverage.every(size => size.coverage > 0.85), `Elastic must cover the available surface: ${JSON.stringify(coverage)}`)
+    }
     if (mode === "cardiogram") {
       const resetPulse = async () => {
         await page.getByRole("radio", { name: /^Image\b/ }).check()
@@ -210,20 +228,20 @@ try {
       await setPaused(true)
       await resetPulse() // Documentation shows the fixed spike, not a random quiet interval.
     }
-    if (mode === "blockfall" || mode === "maze-chase" || mode === "fire") {
+    if (mode === "blockfall" || mode === "maze-chase" || mode === "fire" || mode === "elastic") {
       await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "400px" })
       await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height >= 400)
     }
     await page.locator(".cw-preview").screenshot({ path: `test-results/${mode}.png` })
-    if (mode === "fire") {
+    if (mode === "fire" || mode === "elastic") {
       await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "" })
       await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height < 300)
       await page.getByRole("button", { name: "View conversation", exact: true }).click()
-      await page.waitForFunction(() => {
-        const canvas = document.querySelector('.test-timeline .cw-layer[data-wallpaper="fire"] canvas')
+      await page.waitForFunction(mode => {
+        const canvas = document.querySelector(`.test-timeline .cw-layer[data-wallpaper="${mode}"] canvas`)
         return canvas?.height >= 600
-      })
-      await page.locator(".test-conversation").screenshot({ path: "test-results/fire-conversation-dark.png" })
+      }, mode)
+      await page.locator(".test-conversation").screenshot({ path: `test-results/${mode}-conversation-dark.png` })
       await page.getByRole("button", { name: "Wallpaper settings", exact: true }).click()
       await showPreview()
     }
@@ -251,7 +269,7 @@ try {
     await setPaused(false)
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.getByText("Animation paused by your system’s Reduce motion setting.", { exact: true }).waitFor()
-    if (mode === "fire") {
+    if (mode === "fire" || mode === "elastic") {
       const reducedFrame = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
       assert.equal(await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL()), reducedFrame)
@@ -285,8 +303,15 @@ try {
   }, incomingY)
   await setPaused(true)
   for (const [mode, title] of effects.filter(([id]) => id !== "aurora")) {
+    if (mode === "rainbow") await page.evaluate(() => {
+      // Sample a repeatable hue for this visibility check, not whichever hue
+      // the wall clock happens to hit. Keep time advancing for the motion check.
+      const real = Date.now, start = performance.now()
+      window.__restoreAppearanceClock = () => { Date.now = real; delete window.__restoreAppearanceClock }
+      Date.now = () => 1_800_000_000_000 + performance.now() - start
+    })
     await page.getByRole("radio", { name: new RegExp(`^${title}\\b`) }).check()
-    if (mode === "fire") {
+    if (mode === "fire" || mode === "elastic") {
       await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "400px" })
       await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height >= 400)
     }
@@ -323,7 +348,8 @@ try {
     await page.waitForFunction(previous => document.querySelector(".cw-preview canvas").toDataURL() !== previous, moving)
     await setPaused(true)
     await page.getByRole("button", { name: "Use dark theme", exact: true }).click()
-    if (mode === "fire") {
+    if (mode === "rainbow") await page.evaluate(() => window.__restoreAppearanceClock())
+    if (mode === "fire" || mode === "elastic") {
       await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "" })
       await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height < 300)
     }
@@ -401,6 +427,7 @@ try {
       ["pixel-clouds.png", "pixel-clouds-dark.png"], ["plaza-light.png", "plaza-light.png"],
       ["cardiogram.png", "cardiogram-dark.png"], ["tremor.png", "tremor-dark.png"], ["polygraph.png", "polygraph-dark.png"],
       ["fire.png", "fire-dark.png"], ["fire-light.png", "fire-light.png"],
+      ["elastic.png", "elastic-dark.png"], ["elastic-light.png", "elastic-light.png"],
     ]
     const requested = process.argv.find(arg => arg.startsWith("--doc-images="))?.slice("--doc-images=".length).split(",")
     if (requested) for (const name of requested) assert(images.some(([, target]) => target === name), `Unknown documentation image: ${name}`)
@@ -409,7 +436,7 @@ try {
     }
     console.log("README screenshots refreshed in docs/images/ from the verified mock desktop layout.")
   }
-  console.log("Browser checks passed: all 32 animations, tapered warm Fire flames, timestamp-synchronized uniform Rainbow across navigation, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
+  console.log("Browser checks passed: all 33 animations, architectural Elastic, tapered warm Fire flames, timestamp-synchronized uniform Rainbow across navigation, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
 } finally {
   await browser.close()
   await server.close()

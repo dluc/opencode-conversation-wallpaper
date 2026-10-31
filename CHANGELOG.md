@@ -3,7 +3,14 @@
 Notable changes to Conversation Wallpaper. Releases are available as Git tags;
 the default branch can be installed and updated with the OpenCode CLI.
 
-## Unreleased (0.7.2)
+## Unreleased (0.8.0)
+
+- Add Elastic: broad architectural slabs slowly expanding, subdividing, and rejoining, with one warm amber region and shallow projected depth.
+- Use slate/ink colors in dark mode and porcelain/sandstone in light mode, following OpenCode appearance and existing motion/dimming controls.
+- Keep the original Amazon/AWS-inspired artwork procedural and unofficial, without logos, service icons, telemetry, or external assets.
+- Add bounded-geometry, continuity, shared-lifecycle, coverage, theme, and browser checks, with light/dark documentation captures.
+
+## Preview (0.7.2)
 
 - Reshape Fire as bottom-rooted, tapering flame tongues with curling pointed tips and nested orange/yellow cores, replacing horizontal wave/landscape contours.
 - Restore a fixed red/orange/yellow palette and remove the blue/green cycle.
