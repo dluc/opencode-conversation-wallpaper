@@ -3,7 +3,14 @@
 Notable changes to Conversation Wallpaper. Releases are available as Git tags;
 the default branch can be installed and updated with the OpenCode CLI.
 
-## Unreleased (0.8.0)
+## Unreleased (0.9.0)
+
+- Preserve the former fixed-height Fire motion as Grass, a new wallpaper with light/dark green palettes and a separate saved ID.
+- Give Fire staggered flame lifetimes: tongues grow from the base, stretch, narrow/recede, fade, and renew instead of only swaying sideways.
+- Keep Fire warm red/orange/yellow with smooth gradients, bounded overlapping generations, and paused/hidden simulation time.
+- Add lifecycle, renewal-continuity, Grass-motion/palette, and browser checks, plus refreshed Fire/Grass/gallery captures. Preserve Elastic, Aurora, and Rainbow.
+
+## Preview (0.8.0)
 
 - Add Elastic: broad architectural slabs slowly expanding, subdividing, and rejoining, with one warm amber region and shallow projected depth.
 - Use slate/ink colors in dark mode and porcelain/sandstone in light mode, following OpenCode appearance and existing motion/dimming controls.

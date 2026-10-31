@@ -4,7 +4,7 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 
 [Install](#install) · [Upgrade](#upgrade-an-existing-installation) · [Changelog](CHANGELOG.md) · [Development](#development) · [MIT license](LICENSE)
 
-![Wallpaper gallery with thirty-three single-word names and an Image upload option](docs/images/collection.png)
+![Wallpaper gallery with thirty-four single-word names and an Image upload option](docs/images/collection.png)
 
 ## The collection
 
@@ -41,8 +41,9 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 | **Tremor** | Seismograph-style vibrations alternating between bursts and quieter intervals |
 | **Polygraph** | Three independently wavering, instrument-style traces |
 | **Rainbow** | One solid background color following a timestamp-synchronized hue cycle |
-| **Fire** | Broad red/orange flames with curling tips and yellow cores, slowly flowing upward |
+| **Fire** | Warm flames growing, stretching upward, narrowing, receding, and renewing |
 | **Elastic** | Large architectural blocks slowly expanding, subdividing, and making room |
+| **Grass** | Broad green blades keeping their height while swaying gently in the wind |
 | **Image** | A still or animated local image, displayed as-is |
 
 Each built-in wallpaper defines its own movement; there is no direction control. Select one from the gallery,
@@ -67,7 +68,7 @@ selections, preferences, or uploaded images; only display names changed. **Mist*
 | ![Chunky pixel clouds drifting across a dark sky in several layers](docs/images/pixel-clouds-dark.png) | ![A busy light-colored plaza with many tiny pedestrians crossing in different directions](docs/images/plaza-light.png) |
 
 These are real renderer captures from the mock desktop test layout, paused for screenshots—not screenshots of a live
-OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All thirty-three built-ins animate.
+OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All thirty-four built-ins animate.
 
 ### Elastic · infrastructure quietly making room
 
@@ -92,16 +93,28 @@ and reduced-motion controls. Resizing or switching appearance while paused prese
 | --- | --- |
 | ![Tall, tapering red and orange flame tongues with yellow cores behind readable text in dark mode](docs/images/fire-dark.png) | ![Warm flame tongues and curling pointed tips behind dark text in light mode](docs/images/fire-light.png) |
 
-**Fire** uses five broad, tapering flame tongues with curling pointed tips and smaller orange/yellow cores inside.
-Their bases stay rooted below the canvas while slow deformation flows upward through their bodies and bends their tips
-sideways—not horizontal landscape bands or entire shapes bobbing up and down. Overlapping flames reach through most of
-the available background, with natural gaps around the tips. The palette stays **red, orange, and yellow**; there is no
-blue/green cycle. Like Aurora, the coloring uses smooth, translucent vector gradients: no dithering, pixel texture,
-sparks, rapid flicker, or smoke particles behind your text.
+**Fire** has actual growth and recession rather than permanent leaf-like silhouettes: individual tongues emerge at
+the base, grow taller, stretch upward, narrow, recede, and fade before renewing. Five origins each have two overlapping
+generations, with staggered 9.8–14.6-second lifetimes at 1× speed, so the fire stays alive instead of pulsing off together.
+Height and width change independently of the small tip curls. Orange/yellow cores follow the same growth; no entire
+shape is translated up and down. The palette stays **red, orange, and yellow**, with smooth translucent vector gradients
+and no dithering, sparks, rapid flicker, or smoke particles. Flame state and lifetimes freeze while paused or hidden.
 
 This is stylized, relaxing fire, not a physical combustion simulation. Dark mode uses luminous warm colors; light mode
 uses deeper, ink-like counterparts. It follows OpenCode's appearance setting, including changes while paused, and
 shares the normal dimming, speed, pause, and reduced-motion controls. Aurora itself is unchanged.
+
+### Grass · the earlier sway, in green
+
+| Dark theme | Light theme |
+| --- | --- |
+| ![Broad layered green grass blades behind readable text in dark mode](docs/images/grass-dark.png) | ![Deeper green blades swaying behind dark text in light mode](docs/images/grass-light.png) |
+
+**Grass** preserves Fire's earlier fixed-height, wind-blown shapes as their own wallpaper, now in green tones. Five
+layered blades stay rooted at the bottom and slowly lean, curl, and sway sideways. Unlike Fire, they do not have birth,
+growth, or recession cycles. Its geometry and motion are unchanged from the earlier effect; only its identity and
+palette differ. Light/dark palettes follow OpenCode's appearance, and the usual speed, dimming, pause, hidden-state,
+and reduced-motion controls apply. Adding Grass does not change any saved Fire or Elastic selection.
 
 ### Rainbow · one slowly changing color
 
@@ -157,11 +170,11 @@ Maze scales the current match immediately, then generates a grid suited to the n
 - Honors system reduced motion by default, with an explicit opt-out. Built-ins stop and images freeze when the timeline or app document is hidden.
 - Live preview status explains pauses and reports actual painted frames. A **Make wallpaper more visible** preset sets 40% dimming and 1.2× speed.
 - Canvas effects capped at 24 fps and 2× pixel density. Cloud and firefly glow textures are cached; particle counts are bounded.
-- Thirty-three atmospheres spanning retro scenery, nature, space, autonomous games, cellular evolution, instrument-style lines, a busy crowd, a slow solid-color cycle, broad morphing flames, and quiet architectural blocks.
+- Thirty-four atmospheres spanning retro scenery, nature, space, autonomous games, cellular evolution, instrument-style lines, a busy crowd, a slow solid-color cycle, growing/receding flames, quiet architectural blocks, and wind-blown grass.
 - Clouds, fireflies, and stars automatically adapt to the app's light or dark appearance. Light mode uses blue-gray mist,
   amber fireflies, and ink-blue stars; the original dark palettes are preserved. Paused wallpapers and gallery thumbnails
   repaint when you switch themes, while uploaded images keep their original colors.
-- Fire uses five layered, tapering flame tongues with bounded vector geometry, independent of screen resolution; red/orange bodies and yellow cores stay warm as their shapes morph.
+- Fire uses ten bounded flame tongues at five origins, with overlapping growth/recession lifetimes; Grass keeps five fixed-height wind-blown blades. Both use smooth theme-aware vector gradients without raster textures.
 - Elastic draws at most ten architectural slabs with simple vector faces; shared moving boundaries suggest elastic capacity without a network connection or live data.
 - Settings persist across sessions and apply to all workspaces. No model calls, remote image requests, or uploads.
 - Command-palette actions to open settings, hide/show wallpaper, and pause/resume animation.
@@ -334,7 +347,7 @@ Do not add install-time build scripts: the prebuilt package should be usable wit
 
 ### Verification scope
 
-Unit/DOM tests cover all thirty-three renderers (motion, still frames, 4× speed, resizing), input restrictions, host detection,
+Unit/DOM tests cover all thirty-four renderers (motion, still frames, 4× speed, resizing), input restrictions, host detection,
 hidden/paused/disabled states, animation cleanup, image snapshots/errors/removal, and late-mounted/cached timelines.
 Chromium tests run the **real plugin setup and settings UI against a mock host**, checking every animation,
 static gallery thumbnails, pause/resume, reduced motion, GIF import/freeze, unchanged still uploads, preserved uploads
@@ -355,9 +368,10 @@ the browser also verifies that the heartbeat's peak stays at the same x coordina
 Rainbow tests verify a complete hue-wheel cycle, timestamp synchronization across new instances, speed scaling, paused
 repainting, and catch-up on resume. Browser checks inspect every canvas pixel for a uniform full-area fill and verify
 that navigating between the conversation and remounted settings does not reset its hue.
-Fire checks verify tapering bodies and pointed tips, bottom-rooted silhouettes without vertical bobbing, upward
-deformation, fixed warm palettes, smooth gradient fills without dithering, broad coverage, bounded vector geometry,
-and paused resize/theme restoration. Browser checks also measure Fire coverage and verify its colors stay warm over time.
+Fire checks verify growth/recession lifetimes, staggered renewal without reset pops or synchronized fading, upward
+deformation, fixed warm palettes, bounded geometry, and paused resize/theme restoration. Grass checks verify preserved
+fixed-height sway, green light/dark palettes, static paused frames, and bounded geometry. Browser checks cover both
+wallpapers' motion, coverage, colors over time, theme changes, and reduced motion.
 
 These are not a live OpenCode Desktop installation test. Verify the plugin in your actual app version before
 relying on compatibility. No global OpenCode configuration is modified by the tests or build.
@@ -365,7 +379,7 @@ relying on compatibility. No global OpenCode configuration is modified by the te
 Elastic checks verify bounded non-overlapping blocks, gradual subdivision/rejoining, one amber region, light/dark palettes,
 and stable paused geometry after resizing. Browser checks measure canvas coverage in landscape, portrait, and tiny layouts.
 
-Refresh the sixteen checked-in README images only after the browser checks succeed:
+Refresh the eighteen checked-in README images only after the browser checks succeed:
 
 ```sh
 npm run docs:screenshots
@@ -374,7 +388,7 @@ npm run docs:screenshots
 To refresh only selected images without changing unrelated captures:
 
 ```sh
-npm run docs:screenshots -- --doc-images=collection.png,fire-dark.png,fire-light.png
+npm run docs:screenshots -- --doc-images=collection.png,fire-dark.png,fire-light.png,grass-dark.png,grass-light.png
 ```
 
 When another preview or test server is running, choose an unused port for browser checks, for example

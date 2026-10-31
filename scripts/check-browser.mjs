@@ -98,7 +98,7 @@ try {
   await page.screenshot({ path: "test-results/conversation.png", fullPage: true })
 
   await page.getByRole("button", { name: "Wallpaper settings" }).click()
-  assert.equal(await page.getByRole("radio").count(), 34)
+  assert.equal(await page.getByRole("radio").count(), 35)
   assert.equal(await page.getByRole("combobox", { name: /Direction/i }).count(), 0)
   await page.getByRole("radio", { name: /^Rain\b/ }).focus()
   await page.keyboard.press("ArrowRight")
@@ -110,7 +110,7 @@ try {
     ["ripple-pond", "Ripples"], ["cardiogram", "Cardiogram"], ["river", "River"],
     ["life", "Life"], ["plaza", "Plaza"], ["constellations", "Constellations"], ["glass", "Glass"],
     ["ocean", "Ocean"], ["embers", "Embers"], ["coast", "Coast"], ["boats", "Boats"], ["orbits", "Orbits"],
-    ["leaves", "Leaves"], ["contours", "Contours"], ["tremor", "Tremor"], ["polygraph", "Polygraph"], ["rainbow", "Rainbow"], ["fire", "Fire"], ["elastic", "Elastic"]]
+    ["leaves", "Leaves"], ["contours", "Contours"], ["tremor", "Tremor"], ["polygraph", "Polygraph"], ["rainbow", "Rainbow"], ["fire", "Fire"], ["elastic", "Elastic"], ["grass", "Grass"]]
   for (const [mode, title] of effects) {
     await page.getByRole("radio", { name: new RegExp(`^${title}\\b`) }).check()
     await speed.evaluate(input => { input.value = "4"; input.dispatchEvent(new Event("change", { bubbles: true })) })
@@ -137,9 +137,17 @@ try {
         const pixel = canvas => [...canvas.getContext("2d").getImageData(0, 0, 1, 1).data]
         const color = await page.locator(".cw-preview canvas").first().evaluate(pixel)
         await page.getByRole("button", { name: "View conversation", exact: true }).click()
+        await page.waitForFunction(() => {
+          const canvas = document.querySelector(".test-timeline canvas")
+          return canvas && canvas.getContext("2d").getImageData(0, 0, 1, 1).data[3] === 255
+        })
         assert.deepEqual(await page.locator(".test-timeline canvas").first().evaluate(pixel), color, "Rainbow reset when navigating to the conversation")
         await page.getByRole("button", { name: "Wallpaper settings", exact: true }).click()
         await showPreview()
+        await page.waitForFunction(() => {
+          const canvas = document.querySelector(".cw-preview canvas")
+          return canvas && canvas.getContext("2d").getImageData(0, 0, 1, 1).data[3] === 255
+        })
         assert.deepEqual(await page.locator(".cw-preview canvas").first().evaluate(pixel), color, "Rainbow reset when remounting settings")
         await page.evaluate(() => { Date.now = () => 1_800_000_093_000 })
         await page.getByRole("slider", { name: "Dimming", exact: true }).evaluate(input => {
@@ -156,7 +164,7 @@ try {
         await page.evaluate(() => { Date.now = window.__realDateNow; delete window.__realDateNow })
       }
     }
-    if (mode === "fire") {
+    if (mode === "fire" || mode === "grass") {
       const coverage = await page.locator(".cw-preview canvas").first().evaluate(canvas => {
         const pixels = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data
         let visible = 0, upper = 0
@@ -166,13 +174,13 @@ try {
         }
         return { total: visible / (pixels.length / 4), upper: upper / (pixels.length / 4) }
       })
-      assert(coverage.total > 0.6 && coverage.upper > 0.02, `Fire must cover most of the canvas with tall flames and natural gaps: ${JSON.stringify(coverage)}`)
-      // Exercise a later frame: the palette must remain warm instead of cycling blue/green.
+      assert(coverage.total > 0.55 && coverage.upper > 0.01, `${title} must reach through the canvas with natural gaps: ${JSON.stringify(coverage)}`)
+      // Exercise later frames: Fire stays warm, Grass stays green.
       for (const appearance of ["dark", "light"]) {
-        const warm = await page.evaluate(async appearance => {
+        const sample = await page.evaluate(async ([appearance, mode]) => {
           const { createScene } = await import("/src/scenes.ts")
           const canvas = document.createElement("canvas"); canvas.width = 712; canvas.height = 400
-          const context = canvas.getContext("2d"), scene = createScene("fire")
+          const context = canvas.getContext("2d"), scene = createScene(mode)
           scene.resize(canvas.width, canvas.height)
           for (let i = 0; i < 300; i++) scene.draw(context, 0.1, 4, appearance)
           const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data
@@ -185,9 +193,10 @@ try {
           output.fillStyle = appearance === "dark" ? "#121513" : "#fdfefd"; output.fillRect(0, 0, capture.width, capture.height)
           output.globalAlpha = 0.45; output.drawImage(canvas, 0, 0)
           return { red, green, blue, capture: capture.toDataURL("image/png") }
-        }, appearance)
-        assert(warm.red > warm.green && warm.green > warm.blue && warm.red > warm.blue * 1.8, `Fire must stay red/orange/yellow in ${appearance} mode`)
-        await writeFile(`test-results/fire-warm-late-${appearance}.png`, Buffer.from(warm.capture.split(",")[1], "base64"))
+        }, [appearance, mode])
+        if (mode === "fire") assert(sample.red > sample.green && sample.green > sample.blue && sample.red > sample.blue * 1.8, `Fire must stay red/orange/yellow in ${appearance} mode`)
+        else assert(sample.green > sample.red && sample.green > sample.blue, `Grass must stay green in ${appearance} mode`)
+        await writeFile(`test-results/${mode}-tone-late-${appearance}.png`, Buffer.from(sample.capture.split(",")[1], "base64"))
       }
     }
     if (mode === "elastic") {
@@ -228,12 +237,12 @@ try {
       await setPaused(true)
       await resetPulse() // Documentation shows the fixed spike, not a random quiet interval.
     }
-    if (mode === "blockfall" || mode === "maze-chase" || mode === "fire" || mode === "elastic") {
+    if (mode === "blockfall" || mode === "maze-chase" || mode === "fire" || mode === "elastic" || mode === "grass") {
       await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "400px" })
       await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height >= 400)
     }
     await page.locator(".cw-preview").screenshot({ path: `test-results/${mode}.png` })
-    if (mode === "fire" || mode === "elastic") {
+    if (mode === "fire" || mode === "elastic" || mode === "grass") {
       await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "" })
       await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height < 300)
       await page.getByRole("button", { name: "View conversation", exact: true }).click()
@@ -269,7 +278,7 @@ try {
     await setPaused(false)
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.getByText("Animation paused by your system’s Reduce motion setting.", { exact: true }).waitFor()
-    if (mode === "fire" || mode === "elastic") {
+    if (mode === "fire" || mode === "elastic" || mode === "grass") {
       const reducedFrame = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
       assert.equal(await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL()), reducedFrame)
@@ -311,7 +320,7 @@ try {
       Date.now = () => 1_800_000_000_000 + performance.now() - start
     })
     await page.getByRole("radio", { name: new RegExp(`^${title}\\b`) }).check()
-    if (mode === "fire" || mode === "elastic") {
+    if (mode === "fire" || mode === "elastic" || mode === "grass") {
       await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "400px" })
       await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height >= 400)
     }
@@ -349,7 +358,7 @@ try {
     await setPaused(true)
     await page.getByRole("button", { name: "Use dark theme", exact: true }).click()
     if (mode === "rainbow") await page.evaluate(() => window.__restoreAppearanceClock())
-    if (mode === "fire" || mode === "elastic") {
+    if (mode === "fire" || mode === "elastic" || mode === "grass") {
       await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "" })
       await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height < 300)
     }
@@ -428,6 +437,7 @@ try {
       ["cardiogram.png", "cardiogram-dark.png"], ["tremor.png", "tremor-dark.png"], ["polygraph.png", "polygraph-dark.png"],
       ["fire.png", "fire-dark.png"], ["fire-light.png", "fire-light.png"],
       ["elastic.png", "elastic-dark.png"], ["elastic-light.png", "elastic-light.png"],
+      ["grass.png", "grass-dark.png"], ["grass-light.png", "grass-light.png"],
     ]
     const requested = process.argv.find(arg => arg.startsWith("--doc-images="))?.slice("--doc-images=".length).split(",")
     if (requested) for (const name of requested) assert(images.some(([, target]) => target === name), `Unknown documentation image: ${name}`)
@@ -436,7 +446,7 @@ try {
     }
     console.log("README screenshots refreshed in docs/images/ from the verified mock desktop layout.")
   }
-  console.log("Browser checks passed: all 33 animations, architectural Elastic, tapered warm Fire flames, timestamp-synchronized uniform Rainbow across navigation, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
+  console.log("Browser checks passed: all 34 animations, preserved Elastic, growing/receding warm Fire, green wind-blown Grass, timestamp-synchronized Rainbow, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
 } finally {
   await browser.close()
   await server.close()

@@ -12,6 +12,7 @@ import { Tremor, Polygraph } from "./scenes-instruments"
 import { Rainbow } from "./scenes-color"
 import { Fire } from "./scenes-fire"
 import { Elastic } from "./scenes-elastic"
+import { Grass } from "./scenes-grass"
 export type { Appearance, Scene } from "./scene"
 
 export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; description: string }> = [
@@ -46,8 +47,9 @@ export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; descrip
   { id: "tremor", title: "Tremor", description: "Seismic-style vibrations · Decorative only" },
   { id: "polygraph", title: "Polygraph", description: "Three wavering traces · Decorative only" },
   { id: "rainbow", title: "Rainbow", description: "Solid color · Slow full-spectrum cycle" },
-  { id: "fire", title: "Fire", description: "Curling flames · Red, orange, yellow" },
+  { id: "fire", title: "Fire", description: "Growing flames · Red, orange, yellow" },
   { id: "elastic", title: "Elastic", description: "Quiet architecture · Making room" },
+  { id: "grass", title: "Grass", description: "Green blades · Slow wind-blown sway" },
 ]
 
 export function wallpaperName(mode: string): string {
@@ -245,5 +247,6 @@ export function createScene(mode: BuiltinMode): Scene {
     case "rainbow": return new Rainbow()
     case "fire": return new Fire()
     case "elastic": return new Elastic()
+    case "grass": return new Grass()
   }
 }
