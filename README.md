@@ -41,7 +41,7 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 | **Tremor** | Seismograph-style vibrations alternating between bursts and quieter intervals |
 | **Polygraph** | Three independently wavering, instrument-style traces |
 | **Rainbow** | One solid background color following a timestamp-synchronized hue cycle |
-| **Fire** | Slender growing/receding flames with a hot central core and fading red edges |
+| **Fire** | A shared warm emission field rising, curling, stretching, cooling, and reforming |
 | **Elastic** | Large architectural blocks slowly expanding, subdividing, and making room |
 | **Grass** | Broad green blades keeping their height while swaying gently in the wind |
 | **Image** | A still or animated local image, displayed as-is |
@@ -91,23 +91,31 @@ and reduced-motion controls. Resizing or switching appearance while paused prese
 
 | Dark theme | Light theme |
 | --- | --- |
-| ![Slender flame tongues with a bright lower core and softer red edges behind readable text in dark mode](docs/images/fire-dark.png) | ![Warm core-focused flames fading toward quiet edges behind dark text in light mode](docs/images/fire-light.png) |
+| ![A warm flowing fire field with a bright base and curling fading tips behind readable text in dark mode](docs/images/fire-dark.png) | ![Warm flowing fire behind dark text in light mode](docs/images/fire-light.png) |
 
-**Fire** has actual growth and recession rather than permanent leaf-like silhouettes: individual tongues emerge at
-the base, grow taller, stretch upward, narrow, recede, and fade before renewing. Five origins each have two overlapping
-generations, with staggered 9.8–14.6-second lifetimes at 1× speed, so the fire stays alive instead of pulsing off together.
-Height and width change independently of the small tip curls; no entire shape is translated up and down.
+**Fire** is a shared 96×160 emission field, not a row of predefined flame objects. A concentrated source feeds the
+base; semi-Lagrangian transport carries it through an upward, smoothly curling velocity field. Cooling and slight
+diffusion extinguish thin regions as the flow stretches and reforms them. The noise drives the flow—it is not visible
+grain, dithering, or a scrolling flame picture.
 
-The origins are unevenly spaced, with taller, brighter tongues near the center and smaller, quieter tongues outside.
-Widths follow the available height rather than stretching with a wide conversation. Each tongue is one smooth,
-elliptically shaded volume: a yellow/orange lower core fades through red to transparent sides and tips, instead of
-nested leaf-shaped color bands. A soft, shared hearth glow joins their bases without making the whole bottom equally
-bright. The palette stays **red, orange, and yellow**, with no dithering, sparks, rapid flicker, or smoke particles.
-Flame state and lifetimes freeze while paused or hidden.
+The palette stays **red, orange, and yellow**. A continuous color/opacity mapping emphasizes the hot-looking core and
+fades cooler-looking edges, with deeper colors and quieter edges in light mode. The sampled field is smoothly upscaled,
+keeps its physical proportions, and fills the available height without stretching into a horizontal wall. There are no
+sparks, rapid flicker, or smoke particles.
+
+The first still frame is seeded directly in one bounded pass, without running a simulation warm-up or advancing the
+clock. Afterwards the fixed-step simulation advances only during visible animation frames, with interpolation between
+states for smooth low-speed playback. Pause, reduced motion,
+and hidden views freeze it; resizing and appearance changes preserve its state. Unchanged still repaints reuse the
+existing buffer rather than re-uploading pixels.
 
 This is stylized, relaxing fire, not a physical combustion simulation. Dark mode uses luminous warm colors; light mode
 uses deeper, ink-like counterparts. It follows OpenCode's appearance setting, including changes while paused, and
 shares the normal dimming, speed, pause, and reduced-motion controls. Aurora itself is unchanged.
+
+The original implementation draws on [semi-Lagrangian transport](https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-38-fast-fluid-dynamics-simulation-gpu)
+and [curl-noise flow](https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph2007-curlnoise.pdf), without copied shader code,
+downloaded textures, or runtime network access. It is not a pressure-projected fluid solver or a real temperature model.
 
 ### Grass · the earlier sway, in green
 
@@ -179,7 +187,7 @@ Maze scales the current match immediately, then generates a grid suited to the n
 - Clouds, fireflies, and stars automatically adapt to the app's light or dark appearance. Light mode uses blue-gray mist,
   amber fireflies, and ink-blue stars; the original dark palettes are preserved. Paused wallpapers and gallery thumbnails
   repaint when you switch themes, while uploaded images keep their original colors.
-- Fire uses ten bounded, height-proportioned flame tongues with overlapping lifetimes and hot-core-to-edge volume shading; Grass keeps five fixed-height wind-blown blades. Both use smooth theme-aware vector gradients without raster textures.
+- Fire transports emission on a bounded grid with a cached warm color/opacity lookup and a reusable sampled buffer; Grass keeps its original five fixed-height vector blades. Neither adds visible grain, dithering, or external assets.
 - Elastic draws at most ten architectural slabs with simple vector faces; shared moving boundaries suggest elastic capacity without a network connection or live data.
 - Settings persist across sessions and apply to all workspaces. No model calls, remote image requests, or uploads.
 - Command-palette actions to open settings, hide/show wallpaper, and pause/resume animation.
@@ -373,10 +381,10 @@ the browser also verifies that the heartbeat's peak stays at the same x coordina
 Rainbow tests verify a complete hue-wheel cycle, timestamp synchronization across new instances, speed scaling, paused
 repainting, and catch-up on resume. Browser checks inspect every canvas pixel for a uniform full-area fill and verify
 that navigating between the conversation and remounted settings does not reset its hue.
-Fire checks verify growth/recession lifetimes, staggered renewal without reset pops or synchronized fading, upward
-deformation, fixed warm palettes, physical width/height proportions, focal core intensity, bounded geometry, and paused
-resize/theme restoration. Browser checks compare core/edge pixel intensity in wide, short, and portrait layouts in both
-appearances, rather than requiring a uniformly filled horizontal wall. Grass checks verify preserved
+Fire checks verify bounded/reused grids, deterministic fixed stepping, upward transport, source concentration, cooling
+and extinction, and direct first-frame initialization without a warm-up. Rendering checks verify warm transfer tables,
+cached still frames, speed scaling, and unchanged simulation age through pause, resize, and appearance changes.
+Browser checks compare core/edge intensity in wide, short, and portrait layouts in both appearances. Grass checks verify preserved
 fixed-height sway, green light/dark palettes, static paused frames, and bounded geometry. Browser checks cover both
 wallpapers' motion, coverage, colors over time, theme changes, and reduced motion.
 
@@ -402,6 +410,11 @@ When another preview or test server is running, choose an unused port for browse
 `WALLPAPER_TEST_PORT=4342 npm run test:browser`. The default remains 4322; no existing server is stopped.
 
 Use the same `CHROME_BIN` override as the browser tests if Chromium is already installed. No external images or assets are downloaded.
+
+The development-only Fire comparison study (`preview/fire-study/README.md` in a source clone) keeps the frozen 0.9.1 geometric renderer
+beside the integrated field renderer. Open `/preview/fire-study/` on the preview server, or run
+`node preview/fire-study/check.mjs` for a 30-second motion comparison and measured CPU draw timings. It is not included
+in the installable package and does not change global OpenCode configuration.
 
 To rerun the native CLI-only migration check:
 

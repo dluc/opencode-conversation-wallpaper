@@ -5,10 +5,11 @@ import { drawing } from "./environment"
 
 const context = drawing as unknown as CanvasRenderingContext2D
 function commands() {
-  return [drawing.fillText, drawing.drawImage, drawing.arc, drawing.ellipse, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect].map(fn => [...fn.mock.calls])
+  const shapes = [drawing.fillText, drawing.drawImage, drawing.arc, drawing.ellipse, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect].map(fn => [...fn.mock.calls])
+  return [...shapes, drawing.putImageData.mock.calls.map(([image]) => [...image.data])]
 }
 function clearCommands() {
-  for (const fn of [drawing.fillText, drawing.drawImage, drawing.arc, drawing.ellipse, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect]) fn.mockClear()
+  for (const fn of [drawing.fillText, drawing.drawImage, drawing.arc, drawing.ellipse, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect, drawing.putImageData]) fn.mockClear()
 }
 
 describe("wallpaper collection", () => {

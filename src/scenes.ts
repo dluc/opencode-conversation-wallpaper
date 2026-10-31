@@ -47,7 +47,7 @@ export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; descrip
   { id: "tremor", title: "Tremor", description: "Seismic-style vibrations · Decorative only" },
   { id: "polygraph", title: "Polygraph", description: "Three wavering traces · Decorative only" },
   { id: "rainbow", title: "Rainbow", description: "Solid color · Slow full-spectrum cycle" },
-  { id: "fire", title: "Fire", description: "Growing flames · Red, orange, yellow" },
+  { id: "fire", title: "Fire", description: "Rising flow · Red, orange, yellow" },
   { id: "elastic", title: "Elastic", description: "Quiet architecture · Making room" },
   { id: "grass", title: "Grass", description: "Green blades · Slow wind-blown sway" },
 ]

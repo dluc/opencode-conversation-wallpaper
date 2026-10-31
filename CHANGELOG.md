@@ -3,7 +3,16 @@
 Notable changes to Conversation Wallpaper. Releases are available as Git tags;
 the default branch can be installed and updated with the OpenCode CLI.
 
-## Unreleased (0.9.1)
+## Unreleased (0.10.0)
+
+- Replace Fire's hand-shaped tongues with a shared transported-emission field: upward curl-noise flow, semi-Lagrangian advection, cooling, and diffusion.
+- Keep a bounded 96×160 grid and warm theme-aware color/opacity lookup, with a tighter edge transition and stronger core.
+- Eliminate simulation pre-warming: seed a formed first frame directly without advancing its clock, interpolate between fixed steps, and cache unchanged frame uploads.
+- Preserve simulation state through pause, hidden views, theme changes, and resizing; retain the existing speed/dimming controls and saved Fire ID.
+- Keep the frozen 0.9.1 renderer in a development-only comparison page; add field, first-frame, rendering, lifecycle, and browser checks with refreshed Fire captures.
+- Leave Grass, Elastic, Aurora, Rainbow, installation/upgrade behavior, and runtime dependencies unchanged.
+
+## Preview (0.9.1)
 
 - Give Fire height-aware slender proportions and irregular origins, with taller/brighter central tongues and smaller/quieter outer tongues.
 - Replace nested, vertically colored leaf-like fills with elliptical hot-core-to-edge volume shading and a shared low hearth glow.

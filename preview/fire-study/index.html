@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fire — flow study</title>
+  </head>
+  <body>
+    <main>
+      <header class="heading"><span class="eyebrow">CONVERSATION WALLPAPER / LOCAL STUDY</span>
+        <h1>Shape, or flow?</h1>
+        <p>The frozen 0.9.1 renderer beside the new transported-emission Fire. Neither pane reads conversation data.
+          This page does not install or change a wallpaper.</p>
+      </header>
+      <form class="controls" aria-label="Comparison controls">
+        <button id="play" type="button">Pause</button>
+        <label>Mock appearance <select id="appearance"><option value="dark">Dark</option><option value="light">Light</option></select></label>
+        <label>Speed <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="4">4×</option></select></label>
+        <label>Dimming <input id="dimming" type="range" min="0" max="100" value="55" /><output id="dimming-value">55%</output></label>
+        <label class="motion"><input id="reduce" type="checkbox" checked /> Follow system Reduce motion</label>
+      </form>
+      <p id="status" class="status" role="status">Preparing comparison…</p>
+      <section class="comparison" aria-label="Fire comparison">
+        <article class="card"><header><span class="eyebrow">REFERENCE / 0.9.1 SHAPED TONGUES</span><h2>Animated geometry</h2><p>Ten pre-shaped tongues, staggered lifetimes, radial core shading.</p></header>
+          <div class="viewport"><canvas id="current" aria-label="Reference Fire 0.9.1 render"></canvas><div class="copy"><span>MOCK CONVERSATION</span><h3>A little atmosphere.<br />A clear train of thought.</h3><p>Your conversations stay in the foreground.</p></div></div>
+          <footer id="current-cost">Preparing…</footer>
+        </article>
+        <article class="card"><header><span class="eyebrow">NEW FIRE / ADVECTED EMISSION</span><h2>Transported field</h2><p>A shared source, upward curl-noise flow, cooling, and diffusion. No flame objects.</p></header>
+          <div class="viewport"><canvas id="field" aria-label="New field-based Fire render"></canvas><div class="copy"><span>MOCK CONVERSATION</span><h3>A little atmosphere.<br />A clear train of thought.</h3><p>Your conversations stay in the foreground.</p></div></div>
+          <footer id="field-cost">Preparing…</footer>
+        </article>
+      </section>
+      <aside><strong>Judge the motion, not just the still.</strong> Watch for upward transport, stretching, curling,
+        merging, and breakup—not repeating leaves. The field starts from a seeded scalar state without pre-warming;
+        both panes advance only with visible animation frames. Noise affects the flow, not visible grain or dithering.</aside>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
