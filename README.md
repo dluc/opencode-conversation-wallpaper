@@ -184,7 +184,7 @@ Maze scales the current match immediately, then generates a grid suited to the n
   particles, or other motion is added, and speed controls are hidden for uploads.
 - Animated images are frozen using a canvas snapshot, not an ineffective CSS animation pause.
 - Honors system reduced motion by default, with an explicit opt-out. Built-ins stop and images freeze when the timeline or app document is hidden.
-- Live preview status explains pauses and reports actual painted frames. A **Make wallpaper more visible** preset sets 40% dimming and 1.2× speed.
+- Live preview status explains pauses and reports actual painted frames. Adjust dimming and animation speed independently.
 - Canvas effects capped at 24 fps and 2× pixel density. Cloud and firefly glow textures are cached; particle counts are bounded.
 - Thirty-four atmospheres spanning retro scenery, nature, space, autonomous games, cellular evolution, instrument-style lines, a busy crowd, a slow solid-color cycle, growing/receding flames, quiet architectural blocks, and wind-blown grass.
 - Clouds, fireflies, and stars automatically adapt to the app's light or dark appearance. Light mode uses blue-gray mist,
@@ -304,8 +304,8 @@ If you previously configured a local copy, remove that old entry before adding t
 
 Use the one-time CLI migration above if pinned, or update the exact source for a branch-tracking install.
 
-In **Settings → Wallpaper**, choose **Make wallpaper more visible**. Existing preferences are preserved
-when updating, so an old 75% dimming setting does not change until you adjust it or use the preset.
+In **Settings → Wallpaper**, lower **Dimming** to 35–55% if the wallpaper is too faint. Existing preferences are preserved
+when updating, so an old 75% dimming setting does not change until you adjust it.
 
 The text below the preview tells you why motion is paused (manual pause, system Reduce motion, or hidden/offscreen),
 or displays a count of actual painted frames. The original effect combined 75% dimming with already-translucent
@@ -313,7 +313,7 @@ glyphs, and moved in discrete grid steps; version 0.1.1 brightens the trails and
 
 If the status reports your system's Reduce motion setting, leave it paused if that is your preference, or explicitly
 turn off **Follow system Reduce motion** to animate this wallpaper without changing macOS accessibility settings.
-**Pause animation** still always takes precedence. The brighter preset does not override system reduced motion.
+**Pause animation** still always takes precedence. Adjusting dimming does not override system reduced motion.
 
 If the preview animates but a conversation does not, report your Desktop version and whether dimming changes are visible
 in the conversation. Do not remove theme overlays or lower message opacity to compensate; the host DOM adapter may need updating.

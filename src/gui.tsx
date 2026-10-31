@@ -150,11 +150,6 @@ export default Plugin.define({
             <small>Only the wallpaper is faded, never the messages. Try 35–55% if it is too faint.</small>
           </label>
           <Show when={prefs().mode !== "image"}>
-            <ui.Button onClick={() => {
-              ctx.stores.preferences.update((draft) => {
-                draft.enabled = true; draft.dimming = 40; draft.speed = 1.2; draft.paused = false
-              })
-            }}>Make wallpaper more visible</ui.Button>
             <label class="cw-range"><span>Animation speed <output>{prefs().speed.toFixed(1)}×</output></span>
               <input type="range" aria-label="Animation speed" min={MIN_SPEED} max={MAX_SPEED} step="0.1" value={prefs().speed}
                 onChange={(event) => change("speed", event.currentTarget.valueAsNumber)} />

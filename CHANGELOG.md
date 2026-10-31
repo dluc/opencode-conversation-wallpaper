@@ -5,6 +5,8 @@ the default branch can be installed and updated with the OpenCode CLI.
 
 ## Unreleased (0.11.0)
 
+- Remove the redundant visibility preset button; dimming, animation speed, and pause remain independent controls.
+
 - Retain shared window-lifetime animation state across conversation changes, cached timelines, preview remounts, and wallpaper switches; advance each simulation once per visible frame.
 - Keep particle/stream seeds through resizing and reuse one shared drawing surface instead of full-size per-mode frame caches.
 - Reuse the local image decoder during navigation, while keeping actual snapshot/source-unload behavior for pause, reduced motion, and hidden documents.

@@ -112,8 +112,12 @@ try {
   await page.getByText("Animation paused by your system’s Reduce motion setting.", { exact: true }).waitFor()
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await page.getByText(/Rain is animating/).waitFor()
-  await page.getByRole("button", { name: "Make wallpaper more visible" }).click()
+  assert.equal(await page.getByRole("button", { name: "Make wallpaper more visible" }).count(), 0)
+  await page.getByRole("slider", { name: "Dimming", exact: true }).evaluate(input => {
+    input.value = "40"; input.dispatchEvent(new Event("change", { bubbles: true }))
+  })
   assert.equal(await page.getByRole("slider", { name: "Dimming", exact: true }).inputValue(), "40")
+  assert.equal(await speed.inputValue(), "10") // Dimming never changes animation speed.
 
   await page.getByRole("button", { name: "View conversation" }).click()
   await page.waitForFunction(() => document.querySelector(".test-timeline canvas").width > 300)
