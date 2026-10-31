@@ -41,7 +41,7 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 | **Tremor** | Seismograph-style vibrations alternating between bursts and quieter intervals |
 | **Polygraph** | Three independently wavering, instrument-style traces |
 | **Rainbow** | One solid background color following a timestamp-synchronized hue cycle |
-| **Fire** | Warm flames growing, stretching upward, narrowing, receding, and renewing |
+| **Fire** | Slender growing/receding flames with a hot central core and fading red edges |
 | **Elastic** | Large architectural blocks slowly expanding, subdividing, and making room |
 | **Grass** | Broad green blades keeping their height while swaying gently in the wind |
 | **Image** | A still or animated local image, displayed as-is |
@@ -91,14 +91,19 @@ and reduced-motion controls. Resizing or switching appearance while paused prese
 
 | Dark theme | Light theme |
 | --- | --- |
-| ![Tall, tapering red and orange flame tongues with yellow cores behind readable text in dark mode](docs/images/fire-dark.png) | ![Warm flame tongues and curling pointed tips behind dark text in light mode](docs/images/fire-light.png) |
+| ![Slender flame tongues with a bright lower core and softer red edges behind readable text in dark mode](docs/images/fire-dark.png) | ![Warm core-focused flames fading toward quiet edges behind dark text in light mode](docs/images/fire-light.png) |
 
 **Fire** has actual growth and recession rather than permanent leaf-like silhouettes: individual tongues emerge at
 the base, grow taller, stretch upward, narrow, recede, and fade before renewing. Five origins each have two overlapping
 generations, with staggered 9.8–14.6-second lifetimes at 1× speed, so the fire stays alive instead of pulsing off together.
-Height and width change independently of the small tip curls. Orange/yellow cores follow the same growth; no entire
-shape is translated up and down. The palette stays **red, orange, and yellow**, with smooth translucent vector gradients
-and no dithering, sparks, rapid flicker, or smoke particles. Flame state and lifetimes freeze while paused or hidden.
+Height and width change independently of the small tip curls; no entire shape is translated up and down.
+
+The origins are unevenly spaced, with taller, brighter tongues near the center and smaller, quieter tongues outside.
+Widths follow the available height rather than stretching with a wide conversation. Each tongue is one smooth,
+elliptically shaded volume: a yellow/orange lower core fades through red to transparent sides and tips, instead of
+nested leaf-shaped color bands. A soft, shared hearth glow joins their bases without making the whole bottom equally
+bright. The palette stays **red, orange, and yellow**, with no dithering, sparks, rapid flicker, or smoke particles.
+Flame state and lifetimes freeze while paused or hidden.
 
 This is stylized, relaxing fire, not a physical combustion simulation. Dark mode uses luminous warm colors; light mode
 uses deeper, ink-like counterparts. It follows OpenCode's appearance setting, including changes while paused, and
@@ -174,7 +179,7 @@ Maze scales the current match immediately, then generates a grid suited to the n
 - Clouds, fireflies, and stars automatically adapt to the app's light or dark appearance. Light mode uses blue-gray mist,
   amber fireflies, and ink-blue stars; the original dark palettes are preserved. Paused wallpapers and gallery thumbnails
   repaint when you switch themes, while uploaded images keep their original colors.
-- Fire uses ten bounded flame tongues at five origins, with overlapping growth/recession lifetimes; Grass keeps five fixed-height wind-blown blades. Both use smooth theme-aware vector gradients without raster textures.
+- Fire uses ten bounded, height-proportioned flame tongues with overlapping lifetimes and hot-core-to-edge volume shading; Grass keeps five fixed-height wind-blown blades. Both use smooth theme-aware vector gradients without raster textures.
 - Elastic draws at most ten architectural slabs with simple vector faces; shared moving boundaries suggest elastic capacity without a network connection or live data.
 - Settings persist across sessions and apply to all workspaces. No model calls, remote image requests, or uploads.
 - Command-palette actions to open settings, hide/show wallpaper, and pause/resume animation.
@@ -369,7 +374,9 @@ Rainbow tests verify a complete hue-wheel cycle, timestamp synchronization acros
 repainting, and catch-up on resume. Browser checks inspect every canvas pixel for a uniform full-area fill and verify
 that navigating between the conversation and remounted settings does not reset its hue.
 Fire checks verify growth/recession lifetimes, staggered renewal without reset pops or synchronized fading, upward
-deformation, fixed warm palettes, bounded geometry, and paused resize/theme restoration. Grass checks verify preserved
+deformation, fixed warm palettes, physical width/height proportions, focal core intensity, bounded geometry, and paused
+resize/theme restoration. Browser checks compare core/edge pixel intensity in wide, short, and portrait layouts in both
+appearances, rather than requiring a uniformly filled horizontal wall. Grass checks verify preserved
 fixed-height sway, green light/dark palettes, static paused frames, and bounded geometry. Browser checks cover both
 wallpapers' motion, coverage, colors over time, theme changes, and reduced motion.
 

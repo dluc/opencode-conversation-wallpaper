@@ -167,14 +167,16 @@ try {
     if (mode === "fire" || mode === "grass") {
       const coverage = await page.locator(".cw-preview canvas").first().evaluate(canvas => {
         const pixels = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data
-        let visible = 0, upper = 0
+        let visible = 0, upper = 0, first = canvas.height
         for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 12) {
           visible++
+          first = Math.min(first, Math.floor(i / 4 / canvas.width))
           if (i < pixels.length * 0.2) upper++
         }
-        return { total: visible / (pixels.length / 4), upper: upper / (pixels.length / 4) }
+        return { total: visible / (pixels.length / 4), upper: upper / (pixels.length / 4), first: first / canvas.height }
       })
-      assert(coverage.total > 0.55 && coverage.upper > 0.01, `${title} must reach through the canvas with natural gaps: ${JSON.stringify(coverage)}`)
+      if (mode === "grass") assert(coverage.total > 0.55 && coverage.upper > 0.01, `Grass must reach through the canvas: ${JSON.stringify(coverage)}`)
+      else assert(coverage.total > 0.08 && coverage.first < 0.25, `Fire must have tall visible tongues without a full-width wall: ${JSON.stringify(coverage)}`)
       // Exercise later frames: Fire stays warm, Grass stays green.
       for (const appearance of ["dark", "light"]) {
         const sample = await page.evaluate(async ([appearance, mode]) => {
@@ -192,10 +194,27 @@ try {
           const output = capture.getContext("2d")
           output.fillStyle = appearance === "dark" ? "#121513" : "#fdfefd"; output.fillRect(0, 0, capture.width, capture.height)
           output.globalAlpha = 0.45; output.drawImage(canvas, 0, 0)
-          return { red, green, blue, capture: capture.toDataURL("image/png") }
+          const focus = []
+          if (mode === "fire") for (const [width, height] of [[1200, 600], [390, 844], [712, 240]]) {
+            canvas.width = width; canvas.height = height; scene.resize(width, height); scene.draw(context, 0, 1, appearance)
+            const image = context.getImageData(0, 0, width, height).data
+            let core = 0, edges = 0, coreCount = 0, edgeCount = 0
+            for (let y = Math.floor(height * 0.45); y < height * 0.95; y++) for (let x = 0; x < width; x++) {
+              const i = (y * width + x) * 4, luminance = image[i] * 0.2126 + image[i + 1] * 0.7152 + image[i + 2] * 0.0722
+              const energy = (appearance === "light" ? 255 - luminance : luminance) * image[i + 3] / 255
+              if (x >= width * 0.35 && x < width * 0.65) { core += energy; coreCount++ }
+              else if (x < width * 0.15 || x >= width * 0.85) { edges += energy; edgeCount++ }
+            }
+            focus.push({ width, height, core: core / coreCount, edges: edges / edgeCount })
+          }
+          return { red, green, blue, capture: capture.toDataURL("image/png"), focus }
         }, [appearance, mode])
         if (mode === "fire") assert(sample.red > sample.green && sample.green > sample.blue && sample.red > sample.blue * 1.8, `Fire must stay red/orange/yellow in ${appearance} mode`)
         else assert(sample.green > sample.red && sample.green > sample.blue, `Grass must stay green in ${appearance} mode`)
+        if (mode === "fire") {
+          assert(sample.focus.every(size => size.core > size.edges * 2.5), `Fire heat must concentrate at its core in ${appearance} mode: ${JSON.stringify(sample.focus)}`)
+          console.log(`Fire core/edge intensity (${appearance}): ${JSON.stringify(sample.focus)}`)
+        }
         await writeFile(`test-results/${mode}-tone-late-${appearance}.png`, Buffer.from(sample.capture.split(",")[1], "base64"))
       }
     }
@@ -446,7 +465,7 @@ try {
     }
     console.log("README screenshots refreshed in docs/images/ from the verified mock desktop layout.")
   }
-  console.log("Browser checks passed: all 34 animations, preserved Elastic, growing/receding warm Fire, green wind-blown Grass, timestamp-synchronized Rainbow, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
+  console.log("Browser checks passed: all 34 animations, preserved Elastic, core-focused growing/receding Fire across viewport proportions, green wind-blown Grass, timestamp-synchronized Rainbow, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
 } finally {
   await browser.close()
   await server.close()

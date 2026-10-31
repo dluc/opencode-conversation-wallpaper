@@ -3,7 +3,14 @@
 Notable changes to Conversation Wallpaper. Releases are available as Git tags;
 the default branch can be installed and updated with the OpenCode CLI.
 
-## Unreleased (0.9.0)
+## Unreleased (0.9.1)
+
+- Give Fire height-aware slender proportions and irregular origins, with taller/brighter central tongues and smaller/quieter outer tongues.
+- Replace nested, vertically colored leaf-like fills with elliptical hot-core-to-edge volume shading and a shared low hearth glow.
+- Preserve growth/recession lifetimes, fixed warm colors, and paused state; add landscape/portrait core-intensity and physical-proportion checks.
+- Refresh Fire and gallery captures only; Grass, Elastic, Aurora, and Rainbow are unchanged.
+
+## Preview (0.9.0)
 
 - Preserve the former fixed-height Fire motion as Grass, a new wallpaper with light/dark green palettes and a separate saved ID.
 - Give Fire staggered flame lifetimes: tongues grow from the base, stretch, narrow/recede, fade, and renew instead of only swaying sideways.
