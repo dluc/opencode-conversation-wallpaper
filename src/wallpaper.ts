@@ -1,5 +1,7 @@
 import { clamp, imageSource, type Preferences } from "./preferences"
-import { createScene, wallpaperName, type Appearance } from "./scenes"
+import { wallpaperName, type Appearance } from "./scenes"
+import { ScenePool } from "./scene-pool"
+import type { ImageView } from "./image-pool"
 
 export interface Wallpaper {
   update(preferences: Preferences, appearance?: Appearance): void
@@ -39,16 +41,15 @@ export function timelineHost(scroll: Element): HTMLElement | undefined {
 }
 
 export function mountWallpaper(host: HTMLElement, initial: Preferences, reportError: (message: string) => void,
-  reportStatus?: (status: WallpaperStatus) => void, initialAppearance: Appearance = "dark"): Wallpaper {
+  reportStatus?: (status: WallpaperStatus) => void, initialAppearance: Appearance = "dark", sharedScenes?: ScenePool,
+  priority = 0): Wallpaper {
+  const scenes = sharedScenes ?? new ScenePool()
   const layer = document.createElement("div")
   layer.className = "cw-layer"
   layer.setAttribute("aria-hidden", "true")
   const canvas = document.createElement("canvas")
-  const image = document.createElement("img")
-  image.alt = ""
-  image.draggable = false
   const still = document.createElement("canvas")
-  layer.append(canvas, image, still)
+  layer.append(canvas, still)
   host.prepend(layer)
   host.classList.add("cw-host")
   const context = canvas.getContext("2d")
@@ -56,17 +57,14 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
   let prefs = initial
   let appearance = initialAppearance
   let sceneMode = initial.mode
-  let scene = initial.mode === "image" ? undefined : createScene(initial.mode)
+  let scene = initial.mode === "image" ? undefined : scenes.view(initial.mode, priority)
   let visible = false
   let disposed = false
   let frame = 0
   let previous = 0
   let width = 0
   let height = 0
-  let loadedSource = ""
-  let failedSource = ""
-  let frozen = false
-  let source = ""
+  let image: ImageView | undefined
   let paintedFrames = 0
   let lastStatusTime = 0
 
@@ -82,7 +80,7 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
     reportStatus?.({ reason, name: wallpaperName(prefs.mode), frames: paintedFrames, width, height, opacity: 1 - clamp(prefs.dimming, 0, 100) / 100 })
   }
   const stop = () => { cancelAnimationFrame(frame); frame = 0; previous = 0 }
-  const paint = (elapsed: number) => { if (context) scene?.draw(context, elapsed, prefs.speed, appearance) }
+  const paint = (elapsed: number, now?: number) => { if (context) scene?.draw(context, elapsed, prefs.speed, appearance, now) }
   const tick = (now: number) => {
     frame = 0
     if (disposed) return
@@ -90,7 +88,7 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
     // Limit to 24fps. Text streaming and interaction retain priority.
     if (!previous || now - previous >= 1000 / 24) {
       const elapsed = previous ? (now - previous) / 1000 : 0
-      paint(elapsed)
+      paint(elapsed, now)
       if (elapsed) {
         paintedFrames++
         if (paintedFrames === 1 || now - lastStatusTime >= 1000) { lastStatusTime = now; status() }
@@ -100,27 +98,12 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
     frame = requestAnimationFrame(tick)
   }
 
-  const freeze = () => {
-    if (!image.complete || !image.naturalWidth || frozen) return
-    // A snapshot actually freezes GIF/APNG/WebP; CSS animation-play-state does not.
-    const scale = Math.min(1, 2048 / Math.max(image.naturalWidth, image.naturalHeight))
-    still.width = Math.max(1, Math.round(image.naturalWidth * scale))
-    still.height = Math.max(1, Math.round(image.naturalHeight * scale))
-    const ctx = still.getContext("2d")
-    if (!ctx) return
-    ctx.drawImage(image, 0, 0, still.width, still.height)
-    frozen = true
-    image.hidden = true
-    still.hidden = false
-    image.removeAttribute("src")
-    loadedSource = ""
-  }
-
   const refresh = () => {
     stop()
     if (prefs.mode !== sceneMode) {
       sceneMode = prefs.mode
-      scene = prefs.mode === "image" ? undefined : createScene(prefs.mode)
+      scene?.dispose()
+      scene = prefs.mode === "image" ? undefined : scenes.view(prefs.mode, priority)
       scene?.resize(width, height)
       paintedFrames = 0; lastStatusTime = 0
     }
@@ -129,45 +112,20 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
     layer.hidden = !prefs.enabled
     layer.style.opacity = String(1 - clamp(prefs.dimming, 0, 100) / 100)
     canvas.hidden = prefs.mode === "image"
-    image.style.objectFit = still.style.objectFit = prefs.fit === "contain" ? "contain" : "cover"
-    if (!prefs.enabled || prefs.mode !== "image") {
-      image.hidden = still.hidden = true
-      image.removeAttribute("src")
-      loadedSource = ""
-      frozen = false
-    } else {
-      const next = imageSource(prefs.image)
-      if (next !== source) {
-        source = next; frozen = false; failedSource = ""; loadedSource = ""
-        image.removeAttribute("src")
-      }
-      image.hidden = frozen || !source || source === failedSource
-      still.hidden = !frozen
-      if (source && source !== failedSource && (!frozen || animated()) && loadedSource !== source) {
-        frozen = false
-        still.hidden = true
-        image.hidden = false
-        loadedSource = source
-        image.src = source
-      }
-      if (!animated()) freeze()
-    }
+    if (prefs.mode === "image") {
+      image ??= scenes.images.view(layer, still, reportError, priority)
+      image.update(prefs.image, prefs.fit, prefs.enabled && visible && !!width && !!height,
+        prefs.enabled && animated(), !prefs.enabled || prefs.paused || reducedMotion() || document.hidden)
+    } else { image?.dispose(); image = undefined; still.hidden = true }
     if (prefs.enabled && prefs.mode !== "image") {
+      scene?.setActive(animated() && !!context && !!width && !!height, visible && !!width && !!height)
       paint(0)
       if (animated() && context && width && height) frame = requestAnimationFrame(tick)
     }
+    else scene?.setActive(false)
     status()
   }
 
-  image.onload = () => { if (!animated()) freeze() }
-  image.onerror = () => {
-    if (!loadedSource || disposed) return
-    failedSource = loadedSource
-    loadedSource = ""
-    image.hidden = true
-    image.removeAttribute("src")
-    reportError("This wallpaper could not be decoded. Choose another image in Conversation wallpaper settings.")
-  }
   const resize = new ResizeObserver(() => {
     const rect = host.getBoundingClientRect()
     width = Math.round(rect.width)
@@ -195,9 +153,9 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
       intersection.disconnect()
       document.removeEventListener("visibilitychange", refresh)
       reduced.removeEventListener("change", refresh)
-      image.onload = image.onerror = null
-      image.removeAttribute("src")
-      scene = undefined
+      image?.dispose(); image = undefined
+      scene?.dispose(); scene = undefined
+      if (!sharedScenes) scenes.dispose()
       layer.remove()
       host.classList.remove("cw-host")
     },
@@ -206,7 +164,8 @@ export function mountWallpaper(host: HTMLElement, initial: Preferences, reportEr
 
 /** Cached timelines are independent; observe topology, not streamed text mutations. */
 export function watchTimelines(getPreferences: () => Preferences, reportError: (message: string) => void,
-  getAppearance: () => Appearance = () => "dark") {
+  getAppearance: () => Appearance = () => "dark", sharedScenes?: ScenePool) {
+  const scenes = sharedScenes ?? new ScenePool()
   const mounted = new Map<HTMLElement, Wallpaper>()
   let pending = 0
   const scan = () => {
@@ -218,7 +177,7 @@ export function watchTimelines(getPreferences: () => Preferences, reportError: (
     }
     document.querySelectorAll(TIMELINE_SELECTOR).forEach((scroll) => {
       const host = timelineHost(scroll)
-      if (host && !mounted.has(host)) mounted.set(host, mountWallpaper(host, getPreferences(), reportError, undefined, getAppearance()))
+      if (host && !mounted.has(host)) mounted.set(host, mountWallpaper(host, getPreferences(), reportError, undefined, getAppearance(), scenes, 1))
     })
   }
   const relevant = (node: Node) => node instanceof Element &&
@@ -237,6 +196,7 @@ export function watchTimelines(getPreferences: () => Preferences, reportError: (
       cancelAnimationFrame(pending)
       for (const wallpaper of mounted.values()) wallpaper.dispose()
       mounted.clear()
+      if (!sharedScenes) scenes.dispose()
     },
   }
 }

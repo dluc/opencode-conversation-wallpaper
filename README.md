@@ -46,8 +46,9 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 | **Grass** | Broad green blades keeping their height while swaying gently in the wind |
 | **Image** | A still or animated local image, displayed as-is |
 
-Each built-in wallpaper defines its own movement; there is no direction control. Select one from the gallery,
-adjust dimming and animation speed, or pause it. Gallery thumbnails are stills, not extra animation loops.
+Each built-in wallpaper defines its own movement; there is no direction control. Select one from the alphabetical gallery,
+adjust dimming and animation speed, or pause it. The controls are at the top of **Settings → Wallpaper**, followed by
+the live preview and gallery. Gallery thumbnails are stills, not extra animation loops.
 Names are deliberately short and unique. The single-word labels introduced in v0.4.1 do not change saved wallpaper
 selections, preferences, or uploaded images; only display names changed. **Mist** is the soft cloud effect; **Clouds** is retro.
 
@@ -78,8 +79,10 @@ OpenCode Desktop installation. Your theme, fonts, and dimming setting may look d
 
 **Elastic** is an original, unofficial Amazon/AWS-inspired abstraction of modular space and elastic capacity—not a logo,
 cloud diagram, or dashboard. Nine to ten broad, interlocking slabs fill the background with shallow projected depth.
-Their shared boundaries move slowly: neighbours expand and yield while one amber region subdivides and rejoins over a
-minute at 1× speed. Other boundaries evolve independently, so the entire scene is not a scrolling image or rigid grid.
+Their shared boundaries move slowly with larger excursions: neighbours expand and yield while one amber region subdivides and rejoins over a
+minute at 1× speed. Boundaries travel roughly 0.1–0.14 of the normalized layout, the amber subdivision can claim 60% of
+its region, and the shallow lift changes gently. Other boundaries evolve independently, so the scene is not a scrolling
+image or rigid grid.
 
 Dark mode uses ink blue, slate, and restrained amber; light mode uses porcelain, pale blue-gray, and sandstone. Large,
 quiet faces leave room for reading, without particles, tiny components, flashing seams, service icons, or fabricated
@@ -132,7 +135,7 @@ and reduced-motion controls apply. Adding Grass does not change any saved Fire o
 ### Rainbow · one slowly changing color
 
 **Rainbow** fills the whole conversation with a single uniform color—no spatial gradient, pattern, or moving shapes.
-Its hue comes from the current timestamp, looping every three minutes at 1× speed (45 seconds at 4×), so opening another
+Its hue comes from the current timestamp, looping every three minutes at 1× speed (18 seconds at 10×), so opening another
 conversation or returning to settings does not restart at red. At the same timestamp and speed, all active instances share
 the same hue. Dark themes use deeper shades; light themes use pastels. Dimming controls its strength. Pause/reduced motion
 freezes the displayed color; resuming catches up to the current timestamp rather than continuing from a private local clock.
@@ -176,7 +179,7 @@ Maze scales the current match immediately, then generates a grid suited to the n
 
 - Built-in green digital rain, enabled by default at 55% dimming with smooth movement between cells.
 - Import a local PNG, JPEG, GIF, WebP or AVIF (up to 8 MB). PNG/WebP animations are supported when Chromium decodes them.
-- Image fill/contain, dimming, built-in animation speed from **0.2× to 4×**, and pause controls with a live preview.
+- Image fill/contain, dimming, built-in animation speed from **0.1× to 10×**, and pause controls with a live preview.
 - Uploaded stills stay still; animated GIF/WebP/PNG files play their own embedded animation. No artificial panning,
   particles, or other motion is added, and speed controls are hidden for uploads.
 - Animated images are frozen using a canvas snapshot, not an ineffective CSS animation pause.
@@ -190,6 +193,13 @@ Maze scales the current match immediately, then generates a grid suited to the n
 - Fire transports emission on a bounded grid with a cached warm color/opacity lookup and a reusable sampled buffer; Grass keeps its original five fixed-height vector blades. Neither adds visible grain, dithering, or external assets.
 - Elastic draws at most ten architectural slabs with simple vector faces; shared moving boundaries suggest elastic capacity without a network connection or live data.
 - Settings persist across sessions and apply to all workspaces. No model calls, remote image requests, or uploads.
+- Built-ins retain one shared live simulation per Desktop window, so moving between conversations or remounting the
+  preview does not restart their motion, particles, Fire field, or game round. Only visible animation frames advance
+  state, once per frame even if multiple views are visible. Switching wallpapers pauses and retains the unused effect.
+- Shared animation state is in window memory, not written to preferences every frame. It lasts until plugin unload or
+  window/app reload; saved wallpaper choices and settings remain persistent. One reusable drawing surface keeps memory bounded.
+- Local images reuse their actual decoder across conversation handoffs. Explicit pause, reduced motion, or hiding the
+  app still snapshots and unloads animated sources; resuming after that may restart embedded image playback.
 - Command-palette actions to open settings, hide/show wallpaper, and pause/resume animation.
 
 ## Install
@@ -228,8 +238,8 @@ Alternatively, add the Git package to the existing `plugins` array in your **glo
 }
 ```
 
-OpenCode watches configuration changes. Look under **Settings → Conversation wallpaper**, or find
-**Conversation wallpaper settings** in the command palette. GUI availability can also be checked under
+OpenCode watches configuration changes. Look under **Settings → Wallpaper**, or find
+**Wallpaper settings** in the command palette. GUI availability can also be checked under
 **Settings → Extensions → Plugins**. This package has only a GUI entry; it adds no server tools or hooks.
 
 Choose a built-in from the gallery, or **Image → Choose image…** to import a file.
@@ -294,7 +304,7 @@ If you previously configured a local copy, remove that old entry before adding t
 
 Use the one-time CLI migration above if pinned, or update the exact source for a branch-tracking install.
 
-In **Settings → Conversation wallpaper**, choose **Make wallpaper more visible**. Existing preferences are preserved
+In **Settings → Wallpaper**, choose **Make wallpaper more visible**. Existing preferences are preserved
 when updating, so an old 75% dimming setting does not change until you adjust it or use the preset.
 
 The text below the preview tells you why motion is paused (manual pause, system Reduce motion, or hidden/offscreen),
@@ -360,7 +370,7 @@ Do not add install-time build scripts: the prebuilt package should be usable wit
 
 ### Verification scope
 
-Unit/DOM tests cover all thirty-four renderers (motion, still frames, 4× speed, resizing), input restrictions, host detection,
+Unit/DOM tests cover all thirty-four renderers (motion, still frames, 10× speed, resizing), input restrictions, host detection,
 hidden/paused/disabled states, animation cleanup, image snapshots/errors/removal, and late-mounted/cached timelines.
 Chromium tests run the **real plugin setup and settings UI against a mock host**, checking every animation,
 static gallery thumbnails, pause/resume, reduced motion, GIF import/freeze, unchanged still uploads, preserved uploads
@@ -368,6 +378,11 @@ when switching modes, built-in-only speed controls, file rejection, chat pointer
 and unloading/reloading. Light-mode checks measure the canvas pixels composited over white at 55% dimming, including
 theme changes while running and paused, and restoration of the original dark frames. Screenshots are saved
 to ignored `test-results/`.
+
+Continuity checks retain every built-in through conversation DOM removal/remount and mode switching, verify that
+multiple visible views do not double-advance a simulation, and compare exact paused conversation frames in Chromium.
+Image checks verify reuse of the same decoder without a new source assignment during navigation. Settings checks verify
+controls-first order, the alphabetic gallery including Image, and the full 0.1×–10× speed range.
 
 Simulation tests run multiple complete game rounds, check connected mazes, legal actor positions, row clearing,
 board completion, lost lives, and automatic restarts. Browser checks also exercise game/non-game preview transitions,

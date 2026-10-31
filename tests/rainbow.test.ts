@@ -67,9 +67,9 @@ it("Rainbow freezes its hue during still repaints, adapts appearance, then catch
   expect(drawing.fillStyle).toBe(rainbowColor((epoch + 93000) / 1000, "dark"))
 })
 
-it("Rainbow's timestamp cycle still respects the shared 0.2x–4x speed range", () => {
+it("Rainbow's timestamp cycle respects the shared 0.1x–10x speed range", () => {
   const context = drawing as unknown as CanvasRenderingContext2D
-  for (const speed of [0.2, 1, 4]) {
+  for (const speed of [0.1, 1, 10]) {
     vi.mocked(Date.now).mockReturnValue(epoch)
     const scene = createScene("rainbow")
     scene.resize(800, 600); scene.draw(context, 0, speed)

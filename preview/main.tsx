@@ -12,6 +12,7 @@ function TestHost() {
   const [settings, setSettings] = createSignal(true)
   const [enabled, setEnabled] = createSignal(true)
   const [appearance, setAppearance] = createSignal<"light" | "dark">("dark")
+  const [conversation, setConversation] = createSignal(1)
   createEffect(() => { document.documentElement.dataset.appearance = appearance() })
   const [page, setPage] = createSignal<() => JSX.Element>()
   const [bridge, setBridge] = createSignal<() => JSX.Element>()
@@ -39,7 +40,8 @@ function TestHost() {
         Button: (props: { children: JSX.Element; onClick?(): void; busy?: boolean }) => <button disabled={props.busy} onClick={props.onClick}>{props.children}</button>,
       },
     }
-    definition.setup!(ctx as never)
+    const cleanup = definition.setup!(ctx as never)
+    if (typeof cleanup === "function") onCleanup(cleanup)
     onCleanup(() => { styles.forEach(style => style.remove()); setPage(undefined); setBridge(undefined) })
   })
   start()
@@ -47,6 +49,7 @@ function TestHost() {
   return <>
     <header class="test-toolbar"><strong>WALLPAPER / TEST HOST</strong>
       <button onClick={() => setSettings(!settings())}>{settings() ? "View conversation" : "Wallpaper settings"}</button>
+      <button onClick={() => setConversation(conversation() + 1)}>Next conversation</button>
       <button onClick={() => setAppearance(appearance() === "dark" ? "light" : "dark")}>
         {appearance() === "dark" ? "Use light theme" : "Use dark theme"}
       </button>
@@ -56,8 +59,8 @@ function TestHost() {
     <Show when={notice()}><p role="alert">{notice()}</p></Show>
     <main class="test-main">
       <section class="test-conversation" style={{ display: settings() ? "none" : "block" }}>
-        <div class="test-timeline">
-          <div data-slot="session-timeline-scroll"><header>Conversation</header>
+        <Show keyed when={conversation()}>{(number) => <div class="test-timeline">
+          <div data-slot="session-timeline-scroll"><header>Conversation {number}</header>
             <article><span>YOU</span><p>Give this conversation a little atmosphere.</p></article>
             <article><span>OPENCODE</span><h1>Follow the white rabbit.</h1><p>Subtle digital rain behind your work. Your messages, code blocks, and controls remain fully readable and interactive.</p>
               <pre><code>const atmosphere = "matrix"<br />const focus = "your conversation"</code></pre>
@@ -65,7 +68,7 @@ function TestHost() {
             </article>
           </div>
           <div data-slot="session-timeline-visible"></div>
-        </div>
+        </div>}</Show>
         <textarea placeholder="Message OpenCode…" aria-label="Message OpenCode" />
       </section>
       <Show when={settings()}>{page()?.()}</Show>

@@ -31,8 +31,9 @@
 .cw-preview-copy p { margin-top: 14px; opacity: .7; font-size: 12px; }
 .cw-game-preview-label { position: absolute; top: 12px; left: 16px; z-index: 1; pointer-events: none; }
 .cw-motion-status { margin: 10px 0 0; font-size: 12px; opacity: .8; }
-.cw-controls { display: grid; gap: 26px; padding: 28px 0; }
-.cw-mode { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.cw-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; padding: 20px 0 28px; }
+.cw-controls > :is(.cw-image-controls, .cw-error) { grid-column: 1 / -1; }
+.cw-mode { border: 0; padding: 0; margin: 28px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .cw-mode legend { margin-bottom: 10px; font-size: 13px; font-weight: 550; }
 .cw-mode label { position: relative; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--v2-border-border-base, #8885); border-radius: 9px; cursor: pointer; transition: background-color 120ms, border-color 120ms; }
 .cw-mode input { position: absolute; top: 10px; right: 10px; z-index: 1; margin: 0; }
@@ -61,6 +62,6 @@
 .cw-select-label select { color: inherit; background: var(--v2-background-bg-base, #222); border: 1px solid var(--v2-border-border-base, #8885); border-radius: 6px; padding: 6px 10px; }
 .cw-error { font-size: 12px; padding: 12px; border: 1px solid #d87c7c70; border-radius: 6px; }
 .cw-footer { border-top: 1px solid var(--v2-border-border-base, #8883); padding-top: 16px; display: flex; flex-wrap: wrap; gap: 10px; font: 9px/1.5 ui-monospace, monospace; letter-spacing: .1em; opacity: .5; }
-@media (max-width: 620px) { .cw-mode { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cw-settings { padding: 20px 16px; } }
+@media (max-width: 620px) { .cw-mode { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cw-controls { grid-template-columns: 1fr; } .cw-settings { padding: 20px 16px; } }
 @media (max-width: 340px) { .cw-mode { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .cw-settings * { transition: none !important; } }

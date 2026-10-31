@@ -13,13 +13,13 @@ const gap = 0.012
 
 /** A bounded partition, not demand telemetry: neighbours share moving boundaries. */
 export function elasticBlocks(time: number): ElasticBlock[] {
-  const rows = [-1, 0.25 + Math.sin(time * 0.08) * 0.045, 0.73 + Math.sin(time * 0.06) * 0.04, 2]
+  const rows = [-1, 0.25 + Math.sin(time * 0.08) * 0.12, 0.73 + Math.sin(time * 0.06) * 0.11, 2]
   const split = (1 - Math.cos(time * Math.PI / 30)) / 2
   const blocks: ElasticBlock[] = []
   for (let row = 0; row < 3; row++) {
-    const offset = Math.sin(time * 0.055 + row * 2) * 0.055
-    const columns = [-1, 0.3 + Math.sin(time * 0.09) * 0.04 + offset,
-      0.72 + Math.sin(time * 0.07) * 0.05 + offset, 2]
+    const offset = Math.sin(time * 0.055 + row * 2) * 0.14
+    const columns = [-1, 0.3 + Math.sin(time * 0.09) * 0.1 + offset,
+      0.72 + Math.sin(time * 0.07) * 0.12 + offset, 2]
     for (let column = 0; column < 3; column++) {
       const block = { x: columns[column] + gap / 2, y: rows[row] + gap / 2,
         width: columns[column + 1] - columns[column] - gap, height: rows[row + 1] - rows[row] - gap,
@@ -28,7 +28,7 @@ export function elasticBlocks(time: number): ElasticBlock[] {
         block.material = 3
         // A seam opens smoothly as a neutral neighbour takes part of the amber
         // region. At zero it rejoins exactly, with no sudden topology switch.
-        const width = block.width * split * 0.38, seam = gap * split
+        const width = block.width * split * 0.6, seam = gap * split
         if (width > 0) blocks.push({ ...block, x: block.x + block.width - width, width, material: 0, opacity: split })
         block.width -= width + seam
       }
@@ -68,7 +68,8 @@ export class Elastic extends AmbientScene {
       (a.y + a.height) * 0.7 + (a.x + a.width) * 0.2 - (b.y + b.height) * 0.7 - (b.x + b.width) * 0.2)
     for (const block of blocks) {
       const { x, y, width, height, material } = block
-      const lift = material === 3 ? 0.012 : 0.006
+      const lift = material === 3 ? 0.018 + Math.sin(this.time * 0.09) * 0.004
+        : 0.009 + Math.sin(this.time * 0.07 + material) * 0.003
       const top = [project(x, y, lift), project(x + width, y, lift),
         project(x + width, y + height, lift), project(x, y + height, lift)]
       const bottom = [project(x + width, y), project(x + width, y + height), project(x, y + height)]

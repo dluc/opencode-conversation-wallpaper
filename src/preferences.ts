@@ -3,8 +3,8 @@ export const MODES = ["matrix", "clouds", "fireflies", "starfield", "aurora", "m
   "constellations", "glass", "ocean", "embers", "coast", "boats", "orbits", "leaves", "contours", "tremor", "polygraph", "rainbow", "fire", "elastic", "grass", "image"] as const
 export type Mode = typeof MODES[number]
 export type BuiltinMode = Exclude<Mode, "image">
-export const MIN_SPEED = 0.2
-export const MAX_SPEED = 4
+export const MIN_SPEED = 0.1
+export const MAX_SPEED = 10
 export interface Preferences {
   enabled: boolean
   mode: Mode

@@ -112,7 +112,7 @@ export class FireField {
 
   advance(seconds: number) {
     if (!Number.isFinite(seconds) || seconds <= 0) return
-    this.accumulator += Math.min(0.4, seconds)
+    this.accumulator += Math.min(1, seconds)
     while (this.accumulator + 1e-9 >= stepSeconds) {
       this.accumulator = Math.max(0, this.accumulator - stepSeconds)
       this.step()

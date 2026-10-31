@@ -65,7 +65,7 @@ it("fixed-step transport is independent of painted frame grouping, and zero elap
   expect(a.time).toBe(time)
   expect(a.steps).toBe(steps)
   a.advance(1000)
-  expect(a.steps - steps).toBe(12) // Work cannot grow without bound after a stall.
+  expect(a.steps - steps).toBe(30) // A 10x frame stays bounded, without a hidden 4x clamp.
 })
 
 it("the shared source is strongest near the base center and the flow has actual lateral curl", () => {

@@ -2,6 +2,7 @@ import { expect, it } from "vitest"
 import { createScene } from "../src/scenes"
 import { Fire, fireColorTable } from "../src/scenes-fire"
 import { drawing } from "./environment"
+import { MAX_SPEED } from "../src/preferences"
 
 const context = drawing as unknown as CanvasRenderingContext2D
 const pixels = () => new Uint8ClampedArray((drawing.putImageData.mock.calls.at(-1)![0] as ImageData).data)
@@ -61,11 +62,11 @@ it("Fire advances only with positive elapsed time and bounds work at shared maxi
   const scene = new Fire()
   scene.resize(800, 600); scene.draw(context, 0, 1)
   const still = pixels()
-  scene.draw(context, 0.1, 4)
-  expect(scene.model.steps).toBe(12)
+  scene.draw(context, 0.1, MAX_SPEED)
+  expect(scene.model.steps).toBe(30)
   expect(pixels()).not.toEqual(still)
   const age = scene.model.time, paints = drawing.putImageData.mock.calls.length
-  scene.resize(0, 0); scene.draw(context, 0.1, 4)
+  scene.resize(0, 0); scene.draw(context, 0.1, MAX_SPEED)
   expect(scene.model.time).toBe(age)
   expect(drawing.putImageData).toHaveBeenCalledTimes(paints)
 })

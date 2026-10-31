@@ -1,4 +1,4 @@
-import { clamp, type BuiltinMode } from "./preferences"
+import { clamp, type BuiltinMode, type Mode } from "./preferences"
 import { Rain } from "./rain"
 import { AmbientScene, type Appearance, type Scene } from "./scene"
 import { BouncingBalls, DiscoLights, MeteorShower, NightSky } from "./scenes-extra"
@@ -51,6 +51,12 @@ export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; descrip
   { id: "elastic", title: "Elastic", description: "Quiet architecture · Making room" },
   { id: "grass", title: "Grass", description: "Green blades · Slow wind-blown sway" },
 ]
+
+/** Display order is independent of stable stored mode IDs and factory order. */
+export const gallery: ReadonlyArray<{ id: Mode; title: string; description: string }> = [
+  ...collection,
+  { id: "image" as const, title: "Image", description: "Still or animated · Played as-is" },
+].sort((a, b) => a.title.localeCompare(b.title, "en"))
 
 export function wallpaperName(mode: string): string {
   return collection.find(scene => scene.id === mode)?.title ?? "Image"
@@ -129,9 +135,12 @@ class Fireflies extends AmbientScene {
   private sprite: HTMLCanvasElement | undefined
   private spriteAppearance: Appearance | undefined
   private motes: Mote[] = []
+  private count = 0
   protected layout() {
-    const count = Math.round(clamp(this.width * this.height / 22000, 18, 60))
-    this.motes = Array.from({ length: count }, () => ({
+    if (!this.width || !this.height) return
+    this.count = Math.round(clamp(this.width * this.height / 22000, 18, 60))
+    if (this.motes.length) return
+    this.motes = Array.from({ length: 60 }, () => ({
       x: 0.08 + Math.random() * 0.84, y: 0.12 + Math.random() * 0.76,
       phase: Math.random() * Math.PI * 2, size: 0.8 + Math.random() * 1.5,
     }))
@@ -142,7 +151,8 @@ class Fireflies extends AmbientScene {
       this.spriteAppearance = this.appearance
       this.sprite = glowSprite(64, light ? "163, 101, 15" : "216, 241, 117")
     }
-    for (const mote of this.motes) {
+    for (let i = 0; i < this.count; i++) {
+      const mote = this.motes[i]
       const x = (mote.x + Math.sin(this.time * 0.17 + mote.phase) * 0.07 + Math.cos(this.time * 0.09 + mote.phase) * 0.025) * this.width
       const y = (mote.y + Math.cos(this.time * 0.13 + mote.phase) * 0.08) * this.height
       const glow = light ? 0.7 + Math.sin(this.time * 0.6 + mote.phase) * 0.15
@@ -159,15 +169,19 @@ class Fireflies extends AmbientScene {
 interface Star { x: number; y: number; depth: number }
 class Starfield extends AmbientScene {
   private stars: Star[] = []
+  private count = 0
   protected layout() {
-    const count = Math.round(clamp(this.width * this.height / 4000, 70, 220))
-    this.stars = Array.from({ length: count }, () => ({
+    if (!this.width || !this.height) return
+    this.count = Math.round(clamp(this.width * this.height / 4000, 70, 220))
+    if (this.stars.length) return
+    this.stars = Array.from({ length: 220 }, () => ({
       x: Math.random() - 0.5, y: Math.random() - 0.5, depth: 0.12 + Math.random() * 1.08,
     }))
   }
   protected paint(ctx: CanvasRenderingContext2D, delta: number) {
     const light = this.appearance === "light"
-    for (const star of this.stars) {
+    for (let i = 0; i < this.count; i++) {
+      const star = this.stars[i]
       star.depth -= delta * 0.035
       if (star.depth < 0.12) star.depth += 1.08
       const x = this.width * (0.5 + star.x / star.depth)

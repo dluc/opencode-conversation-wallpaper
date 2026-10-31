@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import { collection, createScene, wallpaperName } from "../src/scenes"
+import { collection, createScene, gallery, wallpaperName } from "../src/scenes"
 import { MAX_SPEED, MODES } from "../src/preferences"
 import { drawing } from "./environment"
 
@@ -83,7 +83,7 @@ describe("wallpaper collection", () => {
     expect(new Set(titles).size).toBe(titles.length)
   })
   for (const entry of collection) {
-    it(`${entry.title} really runs at 4x instead of silently clamping at 2x`, () => {
+    it(`${entry.title} really runs at 10x instead of silently clamping at 4x`, () => {
       const random = vi.spyOn(Math, "random").mockReturnValue(0.5)
       const clock = vi.spyOn(Date, "now").mockReturnValue(1_800_000_000_000)
       try {
@@ -96,9 +96,9 @@ describe("wallpaper collection", () => {
         const normal = commands()
         const normalColor = drawing.fillStyle
         clearCommands()
-        expect(MAX_SPEED).toBe(4)
-        clock.mockReturnValue(1_800_000_000_025)
-        maximum.draw(context, 0.025, MAX_SPEED)
+        expect(MAX_SPEED).toBe(10)
+        clock.mockReturnValue(1_800_000_000_010)
+        maximum.draw(context, 0.01, MAX_SPEED)
         expect(commands()).toEqual(normal)
         if (entry.id === "rainbow") expect(Number(drawing.fillStyle.match(/^hsl\(([^,]+)/)![1])).toBeCloseTo(Number(normalColor.match(/^hsl\(([^,]+)/)![1]), 4)
       } finally { random.mockRestore(); clock.mockRestore() }
@@ -155,4 +155,11 @@ describe("wallpaper collection", () => {
       } finally { random.mockRestore(); clock.mockRestore() }
     })
   }
+})
+
+it("the full gallery is alphabetical including Image, without reordering stored mode IDs", () => {
+  expect(gallery.map(entry => entry.title)).toEqual(gallery.map(entry => entry.title).sort((a, b) => a.localeCompare(b, "en")))
+  expect(gallery.find(entry => entry.id === "image")!.title).toBe("Image")
+  expect(gallery).toHaveLength(MODES.length)
+  expect(gallery.map(entry => entry.id).sort()).toEqual([...MODES].sort())
 })

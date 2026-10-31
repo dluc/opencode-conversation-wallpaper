@@ -10,16 +10,22 @@ export class Rain {
   private width = 0
   private height = 0
   private time = 0
+  private layoutHeight = 0
+  private count = 0
 
   resize(width: number, height: number) {
     this.width = width
     this.height = height
-    this.streams = Array.from({ length: Math.ceil(width / cell) }, () => ({
-      head: Math.random() * (height / cell + 24),
-      speed: 2 + Math.random() * 5,
-      length: 8 + Math.floor(Math.random() * 20),
-      seed: Math.floor(Math.random() * 1000),
-    }))
+    if (!width || !height) return
+    if (this.layoutHeight && height !== this.layoutHeight) {
+      for (const stream of this.streams) stream.head *= height / this.layoutHeight
+    }
+    this.layoutHeight = height
+    this.count = Math.min(512, Math.ceil(width / cell))
+    while (this.streams.length < this.count) this.streams.push({
+      head: Math.random() * (height / cell + 24), speed: 2 + Math.random() * 5,
+      length: 8 + Math.floor(Math.random() * 20), seed: Math.floor(Math.random() * 1000),
+    })
   }
 
   draw(ctx: CanvasRenderingContext2D, elapsed: number, speed: number) {
@@ -28,7 +34,8 @@ export class Rain {
     ctx.clearRect(0, 0, this.width, this.height)
     ctx.font = `15px ui-monospace, monospace`
     ctx.textAlign = "center"
-    this.streams.forEach((stream, column) => {
+    for (let column = 0; column < this.count; column++) {
+      const stream = this.streams[column]
       stream.head += delta * stream.speed
       if ((stream.head - stream.length) * cell > this.height) stream.head = -Math.random() * 12
       for (let tail = stream.length; tail >= 0; tail--) {
@@ -37,8 +44,8 @@ export class Rain {
         if (row < 0 || row * cell > this.height + cell) continue
         const index = Math.abs(Math.floor(stream.seed + Math.floor(row) * 17 + this.time * 2)) % glyphs.length
         ctx.fillStyle = tail === 0 ? "#d2ffe3" : `rgba(36, 231, 110, ${0.15 + (1 - tail / stream.length) * 0.85})`
-        ctx.fillText(glyphs[index], column * cell + cell / 2, row * cell)
+        ctx.fillText(glyphs[index], (column + 0.5) * this.width / this.count, row * cell)
       }
-    })
+    }
   }
 }

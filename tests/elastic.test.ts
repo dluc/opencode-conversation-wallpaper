@@ -78,3 +78,10 @@ it("Elastic preserves geometry/time through paused theme switches and resizing",
   expect(drawing.drawImage).not.toHaveBeenCalled()
   expect(drawing.createRadialGradient).not.toHaveBeenCalled()
 })
+
+it("Elastic now makes substantial shared-boundary transformations without changing palettes or block counts", () => {
+  const amber = Array.from({ length: 241 }, (_, i) => elasticBlocks(i * 0.5).find(block => block.material === 3)!)
+  for (const key of ["x", "y"] as const) {
+    expect(Math.max(...amber.map(block => block[key])) - Math.min(...amber.map(block => block[key]))).toBeGreaterThan(0.2)
+  }
+})

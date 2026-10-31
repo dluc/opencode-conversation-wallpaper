@@ -15,10 +15,11 @@ try {
     const clear = CanvasRenderingContext2D.prototype.clearRect, fill = CanvasRenderingContext2D.prototype.fillRect
     CanvasRenderingContext2D.prototype.clearRect = function (...args) {
       this.canvas.__blocks = []
+      this.canvas.__playfield = undefined; this.canvas.__hud = undefined; this.canvas.__trace = []
       return clear.apply(this, args)
     }
     CanvasRenderingContext2D.prototype.fillRect = function (...args) {
-      if (this.canvas.closest(".cw-preview")) (this.canvas.__blocks ??= []).push({ args, alpha: this.globalAlpha })
+      (this.canvas.__blocks ??= []).push({ args, alpha: this.globalAlpha })
       return fill.apply(this, args)
     }
     CanvasRenderingContext2D.prototype.strokeRect = function (...args) {
@@ -31,15 +32,37 @@ try {
     }
     const begin = CanvasRenderingContext2D.prototype.beginPath, line = CanvasRenderingContext2D.prototype.lineTo
     CanvasRenderingContext2D.prototype.beginPath = function (...args) {
-      if (this.canvas.parentElement?.dataset.wallpaper === "cardiogram") this.canvas.__trace = []
+      if ((this.canvas.dataset.wallpaper || this.canvas.parentElement?.dataset.wallpaper) === "cardiogram") this.canvas.__trace = []
       return begin.apply(this, args)
     }
     CanvasRenderingContext2D.prototype.lineTo = function (...args) {
-      if (this.canvas.parentElement?.dataset.wallpaper === "cardiogram") this.canvas.__trace.push(args)
+      if ((this.canvas.dataset.wallpaper || this.canvas.parentElement?.dataset.wallpaper) === "cardiogram") this.canvas.__trace.push(args)
       return line.apply(this, args)
     }
+    const draw = CanvasRenderingContext2D.prototype.drawImage
+    CanvasRenderingContext2D.prototype.drawImage = function (...args) {
+      const result = draw.apply(this, args), source = args[0]
+      if (source instanceof HTMLCanvasElement && this.canvas.closest(".cw-layer")) {
+        this.canvas.__blocks = source.__blocks; this.canvas.__playfield = source.__playfield
+        this.canvas.__hud = source.__hud; this.canvas.__trace = source.__trace
+      }
+      return result
+    }
+    const src = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src")
+    Object.defineProperty(HTMLImageElement.prototype, "src", { ...src, set(value) {
+      this.__sourceAssignments = (this.__sourceAssignments || 0) + 1
+      src.set.call(this, value)
+    } })
   })
-  const showPreview = () => page.locator(".cw-preview").scrollIntoViewIfNeeded()
+  const showPreview = async () => {
+    await page.locator(".cw-preview").scrollIntoViewIfNeeded()
+    await page.waitForFunction(() => {
+      const host = document.querySelector(".cw-preview"), canvas = host.querySelector("canvas")
+      if (host.querySelector(".cw-layer").dataset.wallpaper === "image") return true
+      const rect = host.getBoundingClientRect()
+      return Number(canvas.dataset.sceneWidth) === Math.round(rect.width) && Number(canvas.dataset.sceneHeight) === Math.round(rect.height)
+    })
+  }
   const setPaused = async value => {
     await page.getByRole("checkbox", { name: /^Pause animation/ }).setChecked(value)
     await showPreview()
@@ -56,10 +79,15 @@ try {
   await page.waitForFunction(canvasPainted)
   await page.getByText(/Rain is animating/).waitFor()
   const speed = page.getByRole("slider", { name: "Animation speed", exact: true })
-  assert.equal(await speed.getAttribute("max"), "4")
-  await speed.evaluate(input => { input.value = "4"; input.dispatchEvent(new Event("change", { bubbles: true })) })
-  assert.equal(await speed.inputValue(), "4")
-  await page.getByText("4.0×", { exact: true }).waitFor()
+  assert.equal(await speed.getAttribute("min"), "0.1")
+  assert.equal(await speed.getAttribute("max"), "10")
+  await speed.evaluate(input => { input.value = "10"; input.dispatchEvent(new Event("change", { bubbles: true })) })
+  assert.equal(await speed.inputValue(), "10")
+  await page.getByText("10.0×", { exact: true }).waitFor()
+  assert(await page.locator(".cw-controls").evaluate(controls => !!(controls.compareDocumentPosition(document.querySelector(".cw-mode")) & Node.DOCUMENT_POSITION_FOLLOWING)))
+  const names = await page.locator(".cw-mode strong").allTextContents()
+  assert.deepEqual(names, [...names].sort((a, b) => a.localeCompare(b, "en")))
+  await page.getByRole("region", { name: "Wallpaper settings", exact: true }).waitFor()
   await mkdir("test-results", { recursive: true })
   await page.screenshot({ path: "test-results/settings.png", fullPage: true })
   await page.locator(".cw-mode").screenshot({ path: "test-results/collection.png" })
@@ -102,7 +130,7 @@ try {
   assert.equal(await page.getByRole("combobox", { name: /Direction/i }).count(), 0)
   await page.getByRole("radio", { name: /^Rain\b/ }).focus()
   await page.keyboard.press("ArrowRight")
-  assert.equal(await page.getByRole("radio", { name: /^Mist\b/ }).isChecked(), true)
+  assert.equal(await page.getByRole("radio", { name: /^Rainbow\b/ }).isChecked(), true)
   const effects = [["clouds", "Mist"], ["fireflies", "Fireflies"], ["starfield", "Starfield"], ["aurora", "Aurora"],
     ["meteors", "Meteors"], ["night-sky", "Sky"], ["balls", "Bounce"],
     ["blockfall", "Blockfall"], ["disco", "Disco"], ["maze-chase", "Maze"],
@@ -113,7 +141,7 @@ try {
     ["leaves", "Leaves"], ["contours", "Contours"], ["tremor", "Tremor"], ["polygraph", "Polygraph"], ["rainbow", "Rainbow"], ["fire", "Fire"], ["elastic", "Elastic"], ["grass", "Grass"]]
   for (const [mode, title] of effects) {
     await page.getByRole("radio", { name: new RegExp(`^${title}\\b`) }).check()
-    await speed.evaluate(input => { input.value = "4"; input.dispatchEvent(new Event("change", { bubbles: true })) })
+    await speed.evaluate(input => { input.value = "10"; input.dispatchEvent(new Event("change", { bubbles: true })) })
     await showPreview()
     await page.getByText(new RegExp(`${title} is animating`)).waitFor()
     const frame = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())
@@ -236,12 +264,18 @@ try {
       assert(coverage.every(size => size.coverage > 0.85), `Elastic must cover the available surface: ${JSON.stringify(coverage)}`)
     }
     if (mode === "cardiogram") {
-      const resetPulse = async () => {
-        await page.getByRole("radio", { name: /^Image\b/ }).check()
-        await page.getByRole("radio", { name: /^Cardiogram\b/ }).check()
-        await showPreview()
+      const showPulse = async () => {
+        await setPaused(false)
+        await page.waitForFunction(() => {
+          const trace = document.querySelector(".cw-preview canvas").__trace
+          if (!trace?.length || Math.min(...trace.map(([, y]) => y)) >= trace[0][1] - 8) return false
+          const label = [...document.querySelectorAll(".test-switch")].find(label => label.textContent.startsWith("Pause animation"))
+          label.querySelector("input").click() // Freeze the observed beat in this same browser turn.
+          return true
+        })
+        await setPaused(true)
       }
-      await resetPulse()
+      await showPulse()
       const peak = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.__trace.reduce((a, b) => b[1] < a[1] ? b : a))
       await setPaused(false)
       await page.waitForFunction(([x, y]) => {
@@ -254,7 +288,7 @@ try {
         return trace.length && trace.every(([, y]) => y === trace[0][1])
       })
       await setPaused(true)
-      await resetPulse() // Documentation shows the fixed spike, not a random quiet interval.
+      await showPulse() // Seek a beat; mode changes no longer reset the simulation.
     }
     if (mode === "blockfall" || mode === "maze-chase" || mode === "fire" || mode === "elastic" || mode === "grass") {
       await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "400px" })
@@ -316,7 +350,12 @@ try {
     input.value = "55"; input.dispatchEvent(new Event("change", { bubbles: true }))
   })
   // Start a fresh paused round to verify orientation independently of autoplay progress.
-  await page.getByRole("radio", { name: /^Image\b/ }).check()
+  await page.reload()
+  await page.getByRole("heading", { name: "Set the atmosphere." }).waitFor()
+  await setPaused(true)
+  await page.getByRole("slider", { name: "Dimming", exact: true }).evaluate(input => {
+    input.value = "55"; input.dispatchEvent(new Event("change", { bubbles: true }))
+  })
   await page.getByRole("radio", { name: /Blockfall/ }).check()
   await showPreview()
   const orientation = await page.locator(".cw-preview canvas").first().evaluate(canvas => ({ field: canvas.__playfield, blocks: canvas.__blocks }))
@@ -343,7 +382,9 @@ try {
       await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "400px" })
       await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height >= 400)
     }
+    await showPreview()
     const dark = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())
+    const darkState = await page.locator(".cw-preview canvas").first().evaluate(canvas => ({ ...canvas.dataset }))
     const thumbnail = page.getByRole("radio", { name: new RegExp(`^${title}\\b`) }).locator("..").locator("canvas")
     const darkThumbnail = await thumbnail.evaluate(canvas => canvas.toDataURL())
     await page.getByRole("button", { name: "Use light theme", exact: true }).click()
@@ -368,7 +409,8 @@ try {
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
     assert.equal(await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL()), light)
     await page.getByRole("button", { name: "Use dark theme", exact: true }).click()
-    assert.equal(await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL()), dark)
+    const restored = await page.locator(".cw-preview canvas").first().evaluate(canvas => ({ data: canvas.toDataURL(), state: { ...canvas.dataset } }))
+    assert(restored.data === dark, `${title} did not restore its exact paused dark frame: ${JSON.stringify({ before: darkState, after: restored.state })}`)
     await setPaused(false)
     await page.getByRole("button", { name: "Use light theme", exact: true }).click()
     await page.locator('.cw-preview .cw-layer[data-appearance="light"][data-motion="animation"]').waitFor()
@@ -383,26 +425,62 @@ try {
     }
   }
   await setPaused(false)
+  // Every built-in keeps the same exact paused frame through conversation DOM
+  // removal/remount. Use a single viewport so this proves state, not rescaling.
+  for (const [mode, title] of [["matrix", "Rain"], ...effects]) {
+    await page.getByRole("radio", { name: new RegExp(`^${title}\\b`) }).check()
+    await setPaused(false)
+    await page.getByText(new RegExp(`${title} is animating`)).waitFor()
+    await setPaused(true)
+    await page.getByRole("button", { name: "View conversation", exact: true }).click()
+    await page.waitForFunction(() => {
+      const canvas = document.querySelector(".test-timeline canvas")
+      return canvas?.width > 300 && Number(canvas.dataset.sceneWidth) === Math.round(canvas.getBoundingClientRect().width)
+        && Number(canvas.dataset.sceneHeight) === Math.round(canvas.getBoundingClientRect().height)
+    })
+    const before = await page.locator(".test-timeline canvas").first().evaluate(canvas => canvas.toDataURL())
+    await page.getByRole("button", { name: "Next conversation", exact: true }).click()
+    await page.waitForFunction(() => {
+      const canvas = document.querySelector(".test-timeline canvas")
+      return canvas?.width > 300 && Number(canvas.dataset.sceneWidth) === Math.round(canvas.getBoundingClientRect().width)
+        && Number(canvas.dataset.sceneHeight) === Math.round(canvas.getBoundingClientRect().height)
+    })
+    assert(await page.locator(".test-timeline canvas").first().evaluate(canvas => canvas.toDataURL()) === before, `${title} reset on conversation change`)
+    await page.getByRole("button", { name: "Wallpaper settings", exact: true }).click()
+  }
+  await setPaused(false)
   await page.getByRole("radio", { name: /^Image\b/ }).check()
   assert.equal(await page.getByRole("slider", { name: "Animation speed", exact: true }).count(), 0)
   const gif = Buffer.from("R0lGODlhEAAQAIEAAAg4IwAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh+QQACgAAACwAAAAAEAAQAAAIHQABCBxIsKDBgwgTKlzIsKHDhxAjSpxIsaLFgQEBACH5BAEKAAEALAAAAAAQABAAgY//wgAAAAAAAAAAAAgdAAEIHEiwoMGDCBMqXMiwocOHECNKnEixosWBAQEAOw==", "base64")
   await page.locator('input[type="file"]').setInputFiles({ name: "animated-test.gif", mimeType: "image/gif", buffer: gif })
   await page.getByText("animated-test.gif", { exact: true }).waitFor()
   await showPreview()
-  await page.waitForFunction(() => document.querySelector(".cw-preview img").naturalWidth === 16)
+  await page.waitForFunction(() => document.querySelector(".cw-preview img")?.naturalWidth === 16)
+  await page.getByRole("button", { name: "View conversation", exact: true }).click()
+  await page.waitForFunction(() => { const image = document.querySelector(".test-timeline img"); return image?.naturalWidth === 16 && !image.hidden })
+  const decoder = await page.locator(".test-timeline img").evaluate(image => {
+    window.__uploadDecoder = image
+    return image.__sourceAssignments
+  })
+  await page.getByRole("button", { name: "Next conversation", exact: true }).click()
+  await page.waitForFunction(() => { const image = document.querySelector(".test-timeline img"); return image?.naturalWidth === 16 && !image.hidden })
+  assert(await page.locator(".test-timeline img").evaluate((image, assignments) => image === window.__uploadDecoder && image.__sourceAssignments === assignments, decoder), "Conversation change restarted the image decoder")
+  await page.getByRole("button", { name: "Wallpaper settings", exact: true }).click()
+  await showPreview()
+  await page.waitForFunction(() => { const image = document.querySelector(".cw-preview img"); return image?.naturalWidth === 16 && !image.hidden })
   await setPaused(true)
   await page.waitForFunction(() => {
     const image = document.querySelector(".cw-preview img")
     const still = document.querySelectorAll(".cw-preview canvas")[1]
-    return !image.hasAttribute("src") && image.hidden && !still.hidden && still.width === 16
+    return image && !image.hasAttribute("src") && image.hidden && !still.hidden && still.width === 16
   })
   await setPaused(false)
-  await page.waitForFunction(() => document.querySelector(".cw-preview img").naturalWidth === 16)
+  await page.waitForFunction(() => document.querySelector(".cw-preview img")?.naturalWidth === 16)
   const uploaded = await page.locator(".cw-preview img").getAttribute("src")
   await page.getByRole("radio", { name: /^Mist\b/ }).check()
   await page.getByRole("radio", { name: /^Image\b/ }).check()
   await showPreview()
-  await page.waitForFunction(() => document.querySelector(".cw-preview img").naturalWidth === 16)
+  await page.waitForFunction(() => document.querySelector(".cw-preview img")?.naturalWidth === 16)
   assert.equal(await page.locator(".cw-preview img").getAttribute("src"), uploaded)
   await page.getByRole("button", { name: "Remove image", exact: true }).click()
   assert.equal(await page.locator(".cw-preview img").getAttribute("src"), null)
@@ -415,7 +493,7 @@ try {
   await page.locator('input[type="file"]').setInputFiles({ name: "still-test.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") })
   await page.getByText("still-test.png", { exact: true }).waitFor()
   await showPreview()
-  await page.waitForFunction(() => document.querySelector(".cw-preview img").naturalWidth === 64)
+  await page.waitForFunction(() => document.querySelector(".cw-preview img")?.naturalWidth === 64)
   const stillSource = await page.locator(".cw-preview img").getAttribute("src")
   await page.getByRole("button", { name: "Use light theme", exact: true }).click()
   assert.equal(await page.locator(".cw-preview img").getAttribute("src"), stillSource)
@@ -465,7 +543,7 @@ try {
     }
     console.log("README screenshots refreshed in docs/images/ from the verified mock desktop layout.")
   }
-  console.log("Browser checks passed: all 34 animations, preserved Elastic, core-focused growing/receding Fire across viewport proportions, green wind-blown Grass, timestamp-synchronized Rainbow, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
+  console.log("Browser checks passed: all 34 animations retain state across conversation changes, shared image-decoder handoff, alphabetical controls-first Wallpaper settings, 0.1x–10x built-in speed, stronger Elastic, light/dark themes, static thumbnails, pause/reduced motion, uploads, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
 } finally {
   await browser.close()
   await server.close()

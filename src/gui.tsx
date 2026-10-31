@@ -2,8 +2,9 @@ import { Command, Plugin, SettingsPage, Slot, Store, Style } from "@opencode/plu
 import { Schema } from "effect"
 import { createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js"
 import { defaults, MAX_SPEED, MIN_SPEED, MODES, validateImage, type BuiltinMode, type Preferences } from "./preferences"
-import { collection, createScene, wallpaperName } from "./scenes"
+import { collection, createScene, gallery, wallpaperName } from "./scenes"
 import { mountWallpaper, statusMessage, watchTimelines, type WallpaperStatus } from "./wallpaper"
+import { ScenePool } from "./scene-pool"
 import css from "./style.css?inline"
 
 const PreferencesSchema = Schema.Struct({
@@ -21,6 +22,7 @@ const PreferencesSchema = Schema.Struct({
 export default Plugin.define({
   stores: { preferences: Store.global(PreferencesSchema, defaults) },
   setup(ctx) {
+    const scenes = new ScenePool()
     ctx.add(Style, css)
     const appearance = () => ctx.appearance.mode()
     // Read every field before passing preferences into imperative rendering. Its
@@ -43,7 +45,7 @@ export default Plugin.define({
     // hide their header, so do not depend on session.header to discover them.
     function TimelineBridge() {
       onMount(() => {
-        const controller = watchTimelines(prefs, reportError, appearance)
+        const controller = watchTimelines(prefs, reportError, appearance, scenes)
         createEffect(() => { prefs(); appearance(); controller.update() })
         onCleanup(controller.dispose)
       })
@@ -68,7 +70,7 @@ export default Plugin.define({
       let host!: HTMLDivElement
       const [status, setStatus] = createSignal<WallpaperStatus>()
       onMount(() => {
-        const wallpaper = mountWallpaper(host, prefs(), reportError, setStatus, appearance())
+        const wallpaper = mountWallpaper(host, prefs(), reportError, setStatus, appearance(), scenes)
         createEffect(() => { wallpaper.update(prefs(), appearance()) })
         onCleanup(wallpaper.dispose)
       })
@@ -113,31 +115,14 @@ export default Plugin.define({
         } finally { if (alive) { setLoading(false); input.value = "" } }
       }
       const ui = ctx.ui
-      return <section class="cw-settings" aria-label="Conversation wallpaper settings">
-        <header class="cw-heading"><span class="cw-kicker">CONVERSATION WALLPAPER</span>
+      return <section class="cw-settings" aria-label="Wallpaper settings">
+        <header class="cw-heading"><span class="cw-kicker">WALLPAPER</span>
           <h2>Set the atmosphere.</h2>
           <p>{collection.length} atmospheres. Or something of your own. Always behind the conversation.</p>
         </header>
-        <Preview />
         <div class="cw-controls">
           <ui.Switch label="Enable wallpaper" description="Applies to conversations in every workspace."
             checked={prefs().enabled} onChange={(value) => change("enabled", value)} />
-          <fieldset class="cw-mode"><legend>Choose your atmosphere</legend>
-            <For each={collection}>{(wallpaper) =>
-              <label classList={{ "cw-selected": prefs().mode === wallpaper.id }}>
-                <input type="radio" name="cw-mode" value={wallpaper.id} checked={prefs().mode === wallpaper.id}
-                  onChange={() => { change("mode", wallpaper.id); setError("") }} />
-                <Thumbnail mode={wallpaper.id} />
-                <span class="cw-card-copy"><strong>{wallpaper.title}</strong><small>{wallpaper.description}</small></span>
-              </label>
-            }</For>
-            <label classList={{ "cw-selected": prefs().mode === "image" }}>
-              <input type="radio" name="cw-mode" value="image" checked={prefs().mode === "image"}
-                onChange={() => change("mode", "image")} />
-              <div class="cw-upload-thumbnail" aria-hidden="true"><span>＋</span><small>BRING YOUR OWN</small></div>
-              <span class="cw-card-copy"><strong>Image</strong><small>Still or animated · Played as-is</small></span>
-            </label>
-          </fieldset>
           <Show when={prefs().mode === "image"}>
             <div class="cw-image-controls">
               <input ref={input} type="file" hidden accept="image/png,image/jpeg,image/gif,image/webp,image/avif"
@@ -181,19 +166,33 @@ export default Plugin.define({
             onChange={(value) => change("respectReducedMotion", value)}
             description="Enabled by default. Turn off only if you explicitly want wallpaper animation despite your system’s reduced-motion preference." />
         </div>
+        <Preview />
+        <fieldset class="cw-mode"><legend>Choose your atmosphere</legend>
+          <For each={gallery}>{(wallpaper) =>
+            <label classList={{ "cw-selected": prefs().mode === wallpaper.id }}>
+              <input type="radio" name="cw-mode" value={wallpaper.id} checked={prefs().mode === wallpaper.id}
+                onChange={() => { change("mode", wallpaper.id); setError("") }} />
+              <Show when={wallpaper.id !== "image"}
+                fallback={<div class="cw-upload-thumbnail" aria-hidden="true"><span>＋</span><small>BRING YOUR OWN</small></div>}>
+                <Thumbnail mode={wallpaper.id as BuiltinMode} />
+              </Show>
+              <span class="cw-card-copy"><strong>{wallpaper.title}</strong><small>{wallpaper.description}</small></span>
+            </label>
+          }</For>
+        </fieldset>
         <footer class="cw-footer">LOCAL ONLY <span>·</span> NO MODEL CALLS <span>·</span> NO REMOTE ASSETS</footer>
       </section>
     }
 
     ctx.add(SettingsPage, {
-      id: "wallpaper", title: "Conversation wallpaper", icon: "settings-gear",
+      id: "wallpaper", title: "Wallpaper", icon: "settings-gear",
       entries: [
         { id: "background", title: "Wallpaper collection and uploaded images", keywords: "matrix rain clouds fireflies starfield aurora meteors night sky balls blockfall disco maze pixel train aquarium pond cardiogram river life plaza people constellations glass ocean embers coast boats orbits leaves contours tremor polygraph waveform earthquake rainbow color spectrum hue timestamp fire flame warm red orange yellow elastic architecture blocks amber amazon aws grass green blades wind wallpaper gif animation dimming pause" },
       ],
       render: () => <Settings />,
     })
     ctx.add(Command, {
-      id: "settings", title: "Conversation wallpaper settings", group: "Wallpaper",
+      id: "settings", title: "Wallpaper settings", group: "Wallpaper",
       run: () => ctx.layout.settings("wallpaper"),
     })
     ctx.add(Command, () => ({
@@ -204,5 +203,6 @@ export default Plugin.define({
       id: "pause", title: prefs().paused ? "Resume wallpaper animation" : "Pause wallpaper animation",
       group: "Wallpaper", run: () => change("paused", !prefs().paused),
     }))
+    return scenes.dispose
   },
 })
