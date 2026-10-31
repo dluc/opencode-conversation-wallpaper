@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 import { collection, createScene, gallery, wallpaperName } from "../src/scenes"
 import { MAX_SPEED, MODES } from "../src/preferences"
+import { experimentalCollection } from "../src/scenes-experimental"
 import { drawing } from "./environment"
 
 const context = drawing as unknown as CanvasRenderingContext2D
@@ -65,7 +66,7 @@ describe("wallpaper collection", () => {
   }
   it("offers each built-in exactly once without a user-configurable direction", () => {
     expect(collection.map(scene => scene.id)).toEqual(MODES.filter(mode => mode !== "image"))
-    expect(new Set(collection.map(scene => scene.id)).size).toBe(34)
+    expect(new Set(collection.map(scene => scene.id)).size).toBe(MODES.length - 1)
     expect(wallpaperName("image")).toBe("Image")
   })
   it("uses unique single-word display names without changing stored mode IDs", () => {
@@ -77,6 +78,7 @@ describe("wallpaper collection", () => {
       constellations: "Constellations", glass: "Glass", ocean: "Ocean", embers: "Embers", coast: "Coast",
       boats: "Boats", orbits: "Orbits", leaves: "Leaves", contours: "Contours", tremor: "Tremor", polygraph: "Polygraph",
       rainbow: "Rainbow", fire: "Fire", elastic: "Elastic", grass: "Grass",
+      ...Object.fromEntries(experimentalCollection.map(({ id, title }) => [id, title])),
     })
     const titles = [...collection.map(scene => scene.title), wallpaperName("image")]
     expect(titles.every(title => /^\p{L}+$/u.test(title))).toBe(true)
@@ -97,7 +99,7 @@ describe("wallpaper collection", () => {
         const normalColor = drawing.fillStyle
         clearCommands()
         expect(MAX_SPEED).toBe(10)
-        clock.mockReturnValue(1_800_000_000_010)
+        clock.mockReturnValue(entry.id === "clock" ? 1_800_000_000_100 : 1_800_000_000_010)
         maximum.draw(context, 0.01, MAX_SPEED)
         expect(commands()).toEqual(normal)
         if (entry.id === "rainbow") expect(Number(drawing.fillStyle.match(/^hsl\(([^,]+)/)![1])).toBeCloseTo(Number(normalColor.match(/^hsl\(([^,]+)/)![1]), 4)
@@ -114,6 +116,7 @@ describe("wallpaper collection", () => {
         scene.draw(context, 0, 1)
         const still = commands()
         const stillColor = drawing.fillStyle
+        const stillAlpha = drawing.globalAlpha
         expect(still.some(calls => calls.length > 0)).toBe(true)
         clearCommands()
         scene.draw(context, 0, 1)
@@ -127,6 +130,7 @@ describe("wallpaper collection", () => {
           clearCommands(); scene.draw(context, 0.1, 1)
         }
         if (entry.id === "rainbow") expect(drawing.fillStyle).not.toBe(stillColor)
+        else if (entry.id === "noise") expect(drawing.globalAlpha).not.toBe(stillAlpha)
         else expect(commands()).not.toEqual(still)
       } finally { random.mockRestore(); clock.mockRestore() }
     })
@@ -143,7 +147,7 @@ describe("wallpaper collection", () => {
         const halfSpeed = commands()
         const halfColor = drawing.fillStyle
         clearCommands()
-        clock.mockReturnValue(1_800_000_000_050)
+        clock.mockReturnValue(entry.id === "clock" ? 1_800_000_000_100 : 1_800_000_000_050)
         fast.draw(context, 0.05, 1)
         expect(commands()).toEqual(halfSpeed)
         if (entry.id === "rainbow") expect(Number(drawing.fillStyle.match(/^hsl\(([^,]+)/)![1])).toBeCloseTo(Number(halfColor.match(/^hsl\(([^,]+)/)![1]), 4)

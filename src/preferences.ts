@@ -1,6 +1,9 @@
+export const EXPERIMENTAL_MODES = ["volcano", "bridge", "labyrinth", "underwater", "blackhole", "warp", "portal", "fur", "gravity",
+  "court", "vinyl", "music", "racing", "halloween", "christmas", "fault", "resonance", "lunar", "corona", "clock", "sundial", "calendar", "noise"] as const
+export type ExperimentalMode = typeof EXPERIMENTAL_MODES[number]
 export const MODES = ["matrix", "clouds", "fireflies", "starfield", "aurora", "meteors", "night-sky", "balls", "blockfall", "disco", "maze-chase",
   "pixel-clouds", "train-window", "aquarium", "ripple-pond", "cardiogram", "river", "life", "plaza",
-  "constellations", "glass", "ocean", "embers", "coast", "boats", "orbits", "leaves", "contours", "tremor", "polygraph", "rainbow", "fire", "elastic", "grass", "image"] as const
+  "constellations", "glass", "ocean", "embers", "coast", "boats", "orbits", "leaves", "contours", "tremor", "polygraph", "rainbow", "fire", "elastic", "grass", ...EXPERIMENTAL_MODES, "image"] as const
 export type Mode = typeof MODES[number]
 export type BuiltinMode = Exclude<Mode, "image">
 export const MIN_SPEED = 0.1

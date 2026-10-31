@@ -13,6 +13,7 @@ import { Rainbow } from "./scenes-color"
 import { Fire } from "./scenes-fire"
 import { Elastic } from "./scenes-elastic"
 import { Grass } from "./scenes-grass"
+import { createExperimentalScene, experimentalCollection } from "./scenes-experimental"
 export type { Appearance, Scene } from "./scene"
 
 export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; description: string }> = [
@@ -50,6 +51,7 @@ export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; descrip
   { id: "fire", title: "Fire", description: "Rising flow · Red, orange, yellow" },
   { id: "elastic", title: "Elastic", description: "Quiet architecture · Making room" },
   { id: "grass", title: "Grass", description: "Green blades · Slow wind-blown sway" },
+  ...experimentalCollection,
 ]
 
 /** Built-ins are alphabetical; the special upload option stays last.
@@ -263,5 +265,6 @@ export function createScene(mode: BuiltinMode): Scene {
     case "fire": return new Fire()
     case "elastic": return new Elastic()
     case "grass": return new Grass()
+    default: return createExperimentalScene(mode)
   }
 }

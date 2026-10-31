@@ -3,6 +3,14 @@
 Notable changes to Conversation Wallpaper. Releases are available as Git tags;
 the default branch can be installed and updated with the OpenCode CLI.
 
+## Experimental (0.12.0-preview.1)
+
+- Add 23 original procedural studies on wallpaper-experiments: Volcano, Bridge, Labyrinth, Underwater, Blackhole, Warp, Portal, Fur, Gravity, Court, Vinyl, Music, Racing, Halloween, Christmas, Fault, Resonance, Lunar, Corona, Clock, Sundial, Calendar, and Noise.
+- Preserve all 34 previous built-ins and their saved IDs, shared animation continuity, static thumbnails, alphabetical order, and Image-last placement.
+- Clock and Calendar sample actual local time/date only on active frames; speed changes decorative motion rather than clock hands. Sundial is a decorative day-cycle study.
+- Add a connected deterministic labyrinth and legal explorer walk, bounded artwork/resize tests, leap-year/pause time tests, slow-noise intensity checks, and all-57 browser coverage with per-scene resize timings.
+- Include light/dark experimental contact sheets. No new dependencies, external assets, audio, telemetry, or franchise content.
+
 ## Unreleased (0.11.0)
 
 - Remove the redundant visibility preset button; dimming, animation speed, and pause remain independent controls.

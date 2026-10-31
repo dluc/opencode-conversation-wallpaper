@@ -4,7 +4,10 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 
 [Install](#install) · [Upgrade](#upgrade-an-existing-installation) · [Changelog](CHANGELOG.md) · [Development](#development) · [MIT license](LICENSE)
 
-![Wallpaper gallery with thirty-four single-word names and an Image upload option](docs/images/collection.png)
+![Wallpaper gallery with fifty-seven single-word names and Image appended last](docs/images/collection.png)
+
+> **Experimental branch:** `wallpaper-experiments` adds 23 new concepts to the original 34. This is a preview,
+> not a release or a change to `main`. It includes the fix that keeps **Image** last.
 
 ## The collection
 
@@ -53,7 +56,42 @@ the live preview and gallery. Gallery thumbnails are stills, not extra animation
 Names are deliberately short and unique. The single-word labels introduced in v0.4.1 do not change saved wallpaper
 selections, preferences, or uploaded images; only display names changed. **Mist** is the soft cloud effect; **Clouds** is retro.
 
-### A few moods
+### Experimental collection · 23 original studies
+
+| Area | New wallpapers |
+| --- | --- |
+| Earth and water | **Volcano** (lava/ash), **Underwater** (kelp/sunbeams), **Fur** (flowing fibers), **Fault** (tectonic layers), **Resonance** (seismic wavefronts), **Noise** (soft visual static) |
+| Space and science fiction | **Bridge** (original starship observation deck), **Blackhole** (stylized accretion disc), **Warp** (radial star trails), **Portal** (rippling ring), **Gravity** (curved grid/orbits), **Lunar** (lander), **Corona** (solar prominences) |
+| Play and music | **Labyrinth** (real connected maze and patient explorer), **Court** (tennis rally), **Racing** (original open-road scene), **Vinyl** (spinning record), **Music** (notation/keyboard) |
+| Seasons | **Halloween** (pumpkins/bats/mist), **Christmas** (snowy evergreens/ornaments) |
+| Time and date | **Clock** (actual local analog time), **Calendar** (local month/today), **Sundial** (decorative daylight/shadow cycle) |
+
+![All twenty-three experimental wallpapers in dark appearance, without conversation overlays](docs/images/experiments-dark.png)
+
+![The same experimental collection in light appearance](docs/images/experiments-light.png)
+
+These are original, silent procedural illustrations, not franchise assets or scientifically exact simulations.
+Bridge, Portal, and Racing explore science-fiction/driving ideas without borrowed names, logos, vehicles, or artwork.
+Labyrinth is distinct from the existing autonomous Maze game; Underwater is distinct from the pixel Aquarium;
+Fault and Resonance are geological/wavefront studies rather than another Tremor instrument trace. None shakes the app.
+
+Clock shows your computer's **local time** and Calendar its **local date**, sampled only on active frames. Pause freezes
+their display; resume catches up. Animation speed changes their decorative orbit/accent, **not the clock hands or date**.
+Sundial is an accelerated decorative cycle, not a geolocation-based solar instrument. Noise crossfades a fixed low-resolution
+texture slowly instead of generating flashing random pixels. No sound, microphone, remote data, or conversation access.
+
+To try this branch, replace the exact existing source reported by `opencode plugin list` (do not add a second installation):
+
+```sh
+opencode plugin list
+opencode plugin remove 'EXACT_EXISTING_SOURCE'
+opencode plugin add 'github:dluc/opencode-conversation-wallpaper#wallpaper-experiments'
+```
+
+Run these on the computer running Desktop. Private repository access requires Git credentials with access; do not put tokens
+in the source URL. Existing preferences remain intact. No release tag or npm publication is needed for this preview.
+
+### A few established moods
 
 | Aurora · dark theme | Fireflies · dark theme |
 | --- | --- |
@@ -70,7 +108,7 @@ selections, preferences, or uploaded images; only display names changed. **Mist*
 | ![Chunky pixel clouds drifting across a dark sky in several layers](docs/images/pixel-clouds-dark.png) | ![A busy light-colored plaza with many tiny pedestrians crossing in different directions](docs/images/plaza-light.png) |
 
 These are real renderer captures from the mock desktop test layout, paused for screenshots—not screenshots of a live
-OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All thirty-four built-ins animate.
+OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All fifty-seven built-ins animate.
 
 ### Elastic · infrastructure quietly making room
 
@@ -187,7 +225,7 @@ Maze scales the current match immediately, then generates a grid suited to the n
 - Honors system reduced motion by default, with an explicit opt-out. Built-ins stop and images freeze when the timeline or app document is hidden.
 - Live preview status explains pauses and reports actual painted frames. Adjust dimming and animation speed independently.
 - Canvas effects capped at 24 fps and 2× pixel density. Cloud and firefly glow textures are cached; particle counts are bounded.
-- Thirty-four atmospheres spanning retro scenery, nature, space, autonomous games, cellular evolution, instrument-style lines, a busy crowd, a slow solid-color cycle, growing/receding flames, quiet architectural blocks, and wind-blown grass.
+- Fifty-seven atmospheres on this experimental branch, including the original thirty-four and twenty-three new earth, space, play, seasonal, and time/date studies.
 - Clouds, fireflies, and stars automatically adapt to the app's light or dark appearance. Light mode uses blue-gray mist,
   amber fireflies, and ink-blue stars; the original dark palettes are preserved. Paused wallpapers and gallery thumbnails
   repaint when you switch themes, while uploaded images keep their original colors.
@@ -371,7 +409,7 @@ Do not add install-time build scripts: the prebuilt package should be usable wit
 
 ### Verification scope
 
-Unit/DOM tests cover all thirty-four renderers (motion, still frames, 10× speed, resizing), input restrictions, host detection,
+Unit/DOM tests cover all fifty-seven renderers (motion, still frames, 10× decorative speed, resizing), input restrictions, host detection,
 hidden/paused/disabled states, animation cleanup, image snapshots/errors/removal, and late-mounted/cached timelines.
 Chromium tests run the **real plugin setup and settings UI against a mock host**, checking every animation,
 static gallery thumbnails, pause/resume, reduced motion, GIF import/freeze, unchanged still uploads, preserved uploads
@@ -384,6 +422,11 @@ Continuity checks retain every built-in through conversation DOM removal/remount
 multiple visible views do not double-advance a simulation, and compare exact paused conversation frames in Chromium.
 Image checks verify reuse of the same decoder without a new source assignment during navigation. Settings checks verify
 controls-first order, alphabetical built-ins with Image last, and the full 0.1×–10× speed range.
+
+Experimental checks verify finite, bounded geometry at tiny/portrait/landscape sizes, deterministic resize-safe artwork,
+connected labyrinth passages and legal exploration, leap-year/month transitions, paused real-time clock/date behavior,
+and Noise's bounded slow intensity changes at maximum speed. Chromium also samples all 23 new renderers at three sizes;
+instrumented timings are written to `test-results/experimental-timings.json` (not a live Desktop performance guarantee).
 
 Simulation tests run multiple complete game rounds, check connected mazes, legal actor positions, row clearing,
 board completion, lost lives, and automatic restarts. Browser checks also exercise game/non-game preview transitions,

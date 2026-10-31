@@ -131,19 +131,53 @@ try {
   await page.screenshot({ path: "test-results/conversation.png", fullPage: true })
 
   await page.getByRole("button", { name: "Wallpaper settings" }).click()
-  assert.equal(await page.getByRole("radio").count(), 35)
+  const catalog = await page.evaluate(async () => {
+    const { collection } = await import("/src/scenes.ts")
+    return collection.map(({ id, title }) => [id, title])
+  })
+  assert.equal(await page.getByRole("radio").count(), catalog.length + 1)
   assert.equal(await page.getByRole("combobox", { name: /Direction/i }).count(), 0)
   await page.getByRole("radio", { name: /^Rain\b/ }).focus()
   await page.keyboard.press("ArrowRight")
   assert.equal(await page.getByRole("radio", { name: /^Rainbow\b/ }).isChecked(), true)
-  const effects = [["clouds", "Mist"], ["fireflies", "Fireflies"], ["starfield", "Starfield"], ["aurora", "Aurora"],
-    ["meteors", "Meteors"], ["night-sky", "Sky"], ["balls", "Bounce"],
-    ["blockfall", "Blockfall"], ["disco", "Disco"], ["maze-chase", "Maze"],
-    ["pixel-clouds", "Clouds"], ["train-window", "Journey"], ["aquarium", "Aquarium"],
-    ["ripple-pond", "Ripples"], ["cardiogram", "Cardiogram"], ["river", "River"],
-    ["life", "Life"], ["plaza", "Plaza"], ["constellations", "Constellations"], ["glass", "Glass"],
-    ["ocean", "Ocean"], ["embers", "Embers"], ["coast", "Coast"], ["boats", "Boats"], ["orbits", "Orbits"],
-    ["leaves", "Leaves"], ["contours", "Contours"], ["tremor", "Tremor"], ["polygraph", "Polygraph"], ["rainbow", "Rainbow"], ["fire", "Fire"], ["elastic", "Elastic"], ["grass", "Grass"]]
+  const effects = catalog.filter(([id]) => id !== "matrix")
+  // Bounded resize work and side-by-side artwork without a conversation overlay.
+  const review = await page.evaluate(async () => {
+    const { experimentalCollection } = await import("/src/scenes-experimental.ts")
+    const { createScene } = await import("/src/scenes.ts")
+    const captures = {}, timings = []
+    for (const appearance of ["dark", "light"]) {
+      const sheet = document.createElement("canvas")
+      sheet.width = 1520; sheet.height = Math.ceil(experimentalCollection.length / 4) * 204 + 16
+      const output = sheet.getContext("2d")
+      output.fillStyle = appearance === "dark" ? "#101a20" : "#f3f5f6"; output.fillRect(0, 0, sheet.width, sheet.height)
+      for (const [index, { id, title }] of experimentalCollection.entries()) {
+        const canvas = document.createElement("canvas"), ctx = canvas.getContext("2d"), scene = createScene(id)
+        canvas.width = 360; canvas.height = 170; scene.resize(360, 170)
+        for (let frame = 0; frame < 24; frame++) scene.draw(ctx, 0.1, 10, appearance)
+        const x = 16 + index % 4 * 376, y = 16 + Math.floor(index / 4) * 204
+        output.fillStyle = appearance === "dark" ? "#cbd9df" : "#354b5a"; output.font = "13px sans-serif"
+        output.fillText(title, x, y + 13)
+        output.fillStyle = appearance === "dark" ? "#142026" : "#f7f8f8"; output.fillRect(x, y + 24, 360, 170)
+        output.globalAlpha = 0.65; output.drawImage(canvas, x, y + 24); output.globalAlpha = 1
+        if (appearance === "dark") {
+          for (const [width, height] of [[1, 1], [390, 844], [1200, 600]]) {
+            canvas.width = width; canvas.height = height; scene.resize(width, height)
+            const start = performance.now()
+            for (let frame = 0; frame < 20; frame++) scene.draw(ctx, 0.1, 10, appearance)
+            timings.push({ id, width, height, mean: (performance.now() - start) / 20 })
+          }
+        }
+      }
+      captures[appearance] = sheet.toDataURL()
+    }
+    return { captures, timings }
+  })
+  for (const [appearance, data] of Object.entries(review.captures))
+    await writeFile(`test-results/experiments-${appearance}.png`, Buffer.from(data.split(",")[1], "base64"))
+  await writeFile("test-results/experimental-timings.json", JSON.stringify(review.timings, null, 2))
+  assert(review.timings.every(result => result.mean < 30), "Experimental rendering exceeded the bounded 24fps budget")
+  console.log(`Experimental canvas checks: ${review.timings.length} size/scene combinations; slowest mean ${Math.max(...review.timings.map(result => result.mean)).toFixed(2)} ms/frame (instrumented Chromium).`)
   for (const [mode, title] of effects) {
     await page.getByRole("radio", { name: new RegExp(`^${title}\\b`) }).check()
     await speed.evaluate(input => { input.value = "10"; input.dispatchEvent(new Event("change", { bubbles: true })) })
@@ -540,6 +574,7 @@ try {
       ["fire.png", "fire-dark.png"], ["fire-light.png", "fire-light.png"],
       ["elastic.png", "elastic-dark.png"], ["elastic-light.png", "elastic-light.png"],
       ["grass.png", "grass-dark.png"], ["grass-light.png", "grass-light.png"],
+      ["experiments-dark.png", "experiments-dark.png"], ["experiments-light.png", "experiments-light.png"],
     ]
     const requested = process.argv.find(arg => arg.startsWith("--doc-images="))?.slice("--doc-images=".length).split(",")
     if (requested) for (const name of requested) assert(images.some(([, target]) => target === name), `Unknown documentation image: ${name}`)
@@ -548,7 +583,7 @@ try {
     }
     console.log("README screenshots refreshed in docs/images/ from the verified mock desktop layout.")
   }
-  console.log("Browser checks passed: all 34 animations retain state across conversation changes, shared image-decoder handoff, alphabetical controls-first Wallpaper settings, 0.1x–10x built-in speed, stronger Elastic, light/dark themes, static thumbnails, pause/reduced motion, uploads, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
+  console.log(`Browser checks passed: all ${catalog.length} animations retain state across conversation changes, shared image-decoder handoff, alphabetical built-ins with Image last, controls-first Wallpaper settings, 0.1x–10x built-in speed, light/dark themes, static thumbnails, pause/reduced motion, uploads, chat interaction, narrow layout, unload/reload. Screenshots: test-results/`)
 } finally {
   await browser.close()
   await server.close()
