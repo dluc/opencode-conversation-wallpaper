@@ -45,7 +45,7 @@ export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; descrip
   { id: "tremor", title: "Tremor", description: "Seismic-style vibrations · Decorative only" },
   { id: "polygraph", title: "Polygraph", description: "Three wavering traces · Decorative only" },
   { id: "rainbow", title: "Rainbow", description: "Solid color · Slow full-spectrum cycle" },
-  { id: "fire", title: "Fire", description: "Morphing flames · Broad rising color bands" },
+  { id: "fire", title: "Fire", description: "Curling flames · Red, orange, yellow" },
 ]
 
 export function wallpaperName(mode: string): string {

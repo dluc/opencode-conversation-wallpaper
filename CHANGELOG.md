@@ -3,7 +3,14 @@
 Notable changes to Conversation Wallpaper. Releases are available as Git tags;
 the default branch can be installed and updated with the OpenCode CLI.
 
-## Unreleased (0.7.1)
+## Unreleased (0.7.2)
+
+- Reshape Fire as bottom-rooted, tapering flame tongues with curling pointed tips and nested orange/yellow cores, replacing horizontal wave/landscape contours.
+- Restore a fixed red/orange/yellow palette and remove the blue/green cycle.
+- Carry slow deformation upward through the flame bodies instead of bobbing entire silhouettes vertically; preserve smooth gradients without dithering.
+- Add shape/root/taper and warm-color persistence checks; refresh only Fire and gallery captures. Aurora and Rainbow are unchanged.
+
+## Preview (0.7.1)
 
 - Synchronize Rainbow's hue to the current timestamp so navigation/remounting does not restart it; paused stills remain frozen and resume catches up.
 - Replace Fire's dithered raster with smooth, translucent vector gradients like Aurora's.

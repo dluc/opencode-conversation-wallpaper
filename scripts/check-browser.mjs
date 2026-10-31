@@ -165,10 +165,10 @@ try {
         }
         return { total: visible / (pixels.length / 4), upper: upper / (pixels.length / 4) }
       })
-      assert(coverage.total > 0.75 && coverage.upper > 0.05, `Fire must reach through most of the canvas: ${JSON.stringify(coverage)}`)
-      // Exercise the real renderer at the cool half-cycle without waiting two minutes.
+      assert(coverage.total > 0.6 && coverage.upper > 0.02, `Fire must cover most of the canvas with tall flames and natural gaps: ${JSON.stringify(coverage)}`)
+      // Exercise a later frame: the palette must remain warm instead of cycling blue/green.
       for (const appearance of ["dark", "light"]) {
-        const cool = await page.evaluate(async appearance => {
+        const warm = await page.evaluate(async appearance => {
           const { createScene } = await import("/src/scenes.ts")
           const canvas = document.createElement("canvas"); canvas.width = 712; canvas.height = 400
           const context = canvas.getContext("2d"), scene = createScene("fire")
@@ -185,8 +185,8 @@ try {
           output.globalAlpha = 0.45; output.drawImage(canvas, 0, 0)
           return { red, green, blue, capture: capture.toDataURL("image/png") }
         }, appearance)
-        assert(cool.green > cool.red * 1.5 && cool.blue > cool.red * 1.5, `Fire cool palette is not blue/green in ${appearance} mode`)
-        await writeFile(`test-results/fire-cool-${appearance}.png`, Buffer.from(cool.capture.split(",")[1], "base64"))
+        assert(warm.red > warm.green && warm.green > warm.blue && warm.red > warm.blue * 1.8, `Fire must stay red/orange/yellow in ${appearance} mode`)
+        await writeFile(`test-results/fire-warm-late-${appearance}.png`, Buffer.from(warm.capture.split(",")[1], "base64"))
       }
     }
     if (mode === "cardiogram") {
@@ -409,7 +409,7 @@ try {
     }
     console.log("README screenshots refreshed in docs/images/ from the verified mock desktop layout.")
   }
-  console.log("Browser checks passed: all 32 animations, smooth full-area Fire, timestamp-synchronized uniform Rainbow across navigation, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
+  console.log("Browser checks passed: all 32 animations, tapered warm Fire flames, timestamp-synchronized uniform Rainbow across navigation, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
 } finally {
   await browser.close()
   await server.close()
