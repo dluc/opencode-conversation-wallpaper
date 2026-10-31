@@ -46,7 +46,8 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 | **Grass** | Broad green blades keeping their height while swaying gently in the wind |
 | **Image** | A still or animated local image, displayed as-is |
 
-Each built-in wallpaper defines its own movement; there is no direction control. Select one from the alphabetical gallery,
+Each built-in wallpaper defines its own movement; there is no direction control. Built-ins are alphabetical, with the
+special **Image** upload option at the end. Select one from the gallery,
 adjust dimming and animation speed, or pause it. The controls are at the top of **Settings → Wallpaper**, followed by
 the live preview and gallery. Gallery thumbnails are stills, not extra animation loops.
 Names are deliberately short and unique. The single-word labels introduced in v0.4.1 do not change saved wallpaper
@@ -382,7 +383,7 @@ to ignored `test-results/`.
 Continuity checks retain every built-in through conversation DOM removal/remount and mode switching, verify that
 multiple visible views do not double-advance a simulation, and compare exact paused conversation frames in Chromium.
 Image checks verify reuse of the same decoder without a new source assignment during navigation. Settings checks verify
-controls-first order, the alphabetic gallery including Image, and the full 0.1×–10× speed range.
+controls-first order, alphabetical built-ins with Image last, and the full 0.1×–10× speed range.
 
 Simulation tests run multiple complete game rounds, check connected mazes, legal actor positions, row clearing,
 board completion, lost lives, and automatic restarts. Browser checks also exercise game/non-game preview transitions,

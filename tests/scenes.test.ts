@@ -157,9 +157,10 @@ describe("wallpaper collection", () => {
   }
 })
 
-it("the full gallery is alphabetical including Image, without reordering stored mode IDs", () => {
-  expect(gallery.map(entry => entry.title)).toEqual(gallery.map(entry => entry.title).sort((a, b) => a.localeCompare(b, "en")))
-  expect(gallery.find(entry => entry.id === "image")!.title).toBe("Image")
+it("the built-ins are alphabetical with Image appended last, without reordering stored mode IDs", () => {
+  const builtins = gallery.slice(0, -1)
+  expect(builtins.map(entry => entry.title)).toEqual(collection.map(entry => entry.title).sort((a, b) => a.localeCompare(b, "en")))
+  expect(gallery.at(-1)).toMatchObject({ id: "image", title: "Image" })
   expect(gallery).toHaveLength(MODES.length)
   expect(gallery.map(entry => entry.id).sort()).toEqual([...MODES].sort())
 })

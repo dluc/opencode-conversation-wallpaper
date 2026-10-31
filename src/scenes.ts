@@ -52,11 +52,12 @@ export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; descrip
   { id: "grass", title: "Grass", description: "Green blades · Slow wind-blown sway" },
 ]
 
-/** Display order is independent of stable stored mode IDs and factory order. */
+/** Built-ins are alphabetical; the special upload option stays last.
+ * Display order is independent of stable stored mode IDs and factory order. */
 export const gallery: ReadonlyArray<{ id: Mode; title: string; description: string }> = [
-  ...collection,
+  ...[...collection].sort((a, b) => a.title.localeCompare(b.title, "en")),
   { id: "image" as const, title: "Image", description: "Still or animated · Played as-is" },
-].sort((a, b) => a.title.localeCompare(b.title, "en"))
+]
 
 export function wallpaperName(mode: string): string {
   return collection.find(scene => scene.id === mode)?.title ?? "Image"

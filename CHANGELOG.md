@@ -11,7 +11,7 @@ the default branch can be installed and updated with the OpenCode CLI.
 - Keep particle/stream seeds through resizing and reuse one shared drawing surface instead of full-size per-mode frame caches.
 - Reuse the local image decoder during navigation, while keeping actual snapshot/source-unload behavior for pause, reduced motion, and hidden documents.
 - Increase Elastic's shared-boundary excursions, amber subdivision, and shallow depth changes while preserving its palettes and bounded layout.
-- Rename settings to Wallpaper, move controls above the preview/gallery, and sort the full gallery alphabetically including Image.
+- Rename settings to Wallpaper, move controls above the preview/gallery, and sort built-ins alphabetically with the special Image upload option appended last.
 - Expand built-in speed to 0.1×–10× and remove Fire's downstream time clamp; keep uploads at their embedded playback speed.
 - Add all-wallpaper continuity, decoder handoff, resize/visibility, single-step, alphabetic/order, and speed-range verification.
 
