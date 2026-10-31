@@ -1,99 +1,78 @@
 import { expect, it } from "vitest"
 import { createScene } from "../src/scenes"
-import { fireLift, FIRE_MAX_PIXELS, FIRE_PALETTES } from "../src/scenes-fire"
+import { fireContours, fireLift, firePalette, FIRE_COLOR_CYCLE_SECONDS } from "../src/scenes-fire"
 import { drawing } from "./environment"
 
 const context = drawing as unknown as CanvasRenderingContext2D
-function frame() {
-  const image = drawing.putImageData.mock.calls.at(-1)![0] as ImageData
-  return { width: image.width, height: image.height, data: new Uint8ClampedArray(image.data) }
-}
+const gradients = () => drawing.createLinearGradient.mock.results.map(result => result.value.addColorStop.mock.calls)
 
-it("Fire carries its broad deformation upward rather than scrolling a fixed picture", () => {
-  // The travelling deformation advances 0.26 / 8 canvas heights per second.
+it("Fire carries its deformation upward and independently morphs its flame silhouettes", () => {
   for (const height of [0.1, 0.4, 0.8]) {
     expect(fireLift(height + 0.26 / 8 * 2, 7)).toBeCloseTo(fireLift(height, 5), 10)
   }
-  const scene = createScene("fire")
-  scene.resize(800, 600); scene.draw(context, 0, 1)
-  const before = frame()
-  for (let i = 0; i < 100; i++) scene.draw(context, 0.1, 1)
-  const after = frame()
-  expect(after.data).not.toEqual(before.data)
-  // Each broad tongue also changes its silhouette, not merely its vertical phase.
-  const edge = (image: ReturnType<typeof frame>) => Array.from({ length: image.width }, (_, x) => {
-    for (let y = 0; y < image.height; y++) if (image.data[(y * image.width + x) * 4 + 3]) return y
-    return image.height
-  })
-  const afterEdge = edge(after), shifts = edge(before).map((value, x) => afterEdge[x] - value)
+  const before = fireContours(0), after = fireContours(10)
+  expect(after).not.toEqual(before)
+  const shifts = before[0].map((value, x) => Math.round((after[0][x] - value) * 1000))
   expect(new Set(shifts).size).toBeGreaterThan(10)
 })
 
-it("Fire covers most of landscape and portrait canvases with five fixed warm pigments", () => {
-  for (const appearance of ["dark", "light"] as const) for (const [width, height] of [[1200, 600], [390, 844]]) {
-    const scene = createScene("fire")
-    scene.resize(width, height)
-    for (const elapsed of [0, 10, 20]) {
-      for (let i = 0; i < elapsed * 10; i++) scene.draw(context, 0.1, 1, appearance)
-      scene.draw(context, 0, 1, appearance)
-      const image = frame(), colors = new Set<string>(), alphas = new Set<number>()
-      let painted = 0, upper = 0, bottom = 0
-      for (let pixel = 0; pixel < image.data.length / 4; pixel++) {
-        if (!image.data[pixel * 4 + 3]) continue
-        painted++
-        if (pixel < image.width * image.height * 0.2) upper++
-        if (pixel >= image.width * (image.height - 1)) bottom++
-        colors.add([...image.data.slice(pixel * 4, pixel * 4 + 3)].join(","))
-        alphas.add(image.data[pixel * 4 + 3])
-      }
-      expect(painted / (image.width * image.height)).toBeGreaterThan(0.75)
-      expect(upper).toBeGreaterThan(image.width * image.height * 0.05)
-      expect(bottom).toBe(image.width)
-      expect([...alphas]).toEqual([175])
-      expect([...colors].sort()).toEqual(FIRE_PALETTES[appearance].map(color => color.join(",")).sort())
-      expect(drawing.drawImage).toHaveBeenLastCalledWith(expect.any(HTMLCanvasElement), 0, 0, width, height)
+it("Fire has broad bounded contours covering most of the canvas throughout its color cycle", () => {
+  for (let time = 0; time <= FIRE_COLOR_CYCLE_SECONDS; time += 5) {
+    const contours = fireContours(time)
+    expect(contours).toHaveLength(5)
+    const outer = contours[0]
+    expect(1 - outer.reduce((sum, y) => sum + y, 0) / outer.length).toBeGreaterThan(0.75)
+    expect(Math.min(...outer)).toBeLessThan(0.05)
+    for (const contour of contours) {
+      expect(contour).toHaveLength(81)
+      expect([...contour].every(y => Number.isFinite(y) && y >= 0 && y <= 1)).toBe(true)
     }
   }
 })
 
-it("Fire reuses a bounded raster, preserves paused time on resize, and restores dark colors", () => {
+it("Fire slowly cycles warm to cool as one narrow palette, never mixed warm/cool flames", () => {
+  expect(FIRE_COLOR_CYCLE_SECONDS).toBe(240)
+  for (const appearance of ["dark", "light"] as const) {
+    const warm = firePalette(0, appearance), cool = firePalette(120, appearance)
+    expect(warm.map(color => color.hue)).toEqual([5, 18, 32, 43, 55])
+    expect(cool.map(color => color.hue)).toEqual([165, 178, 192, 203, 215])
+    expect(firePalette(240, appearance)).toEqual(warm)
+    for (let time = 0; time < 240; time++) {
+      const hues = firePalette(time, appearance).map(color => color.hue)
+      expect(Math.max(...hues) - Math.min(...hues)).toBeCloseTo(50, 10)
+      expect(!(hues.some(hue => hue < 60) && hues.some(hue => hue >= 150))).toBe(true)
+      expect(Math.abs(firePalette(time + 0.1, appearance)[0].hue - hues[0])).toBeLessThan(0.21)
+    }
+  }
+  expect(firePalette(0, "light")).not.toEqual(firePalette(0, "dark"))
+})
+
+it("Fire uses only five smooth vector-gradient fills, with stable pause/theme/resize repainting", () => {
   const scene = createScene("fire")
   scene.resize(800, 600); scene.draw(context, 0.1, 1, "dark")
-  const dark = frame(), allocations = drawing.createImageData.mock.calls.length
+  const dark = gradients(), contour = drawing.lineTo.mock.calls.map(call => [...call])
+  expect(dark).toHaveLength(5)
+  expect(drawing.fill).toHaveBeenCalledTimes(5)
+  expect(drawing.drawImage).not.toHaveBeenCalled()
+  expect(drawing.fillRect).not.toHaveBeenCalled()
+  drawing.createLinearGradient.mockClear(); drawing.lineTo.mockClear()
   scene.draw(context, 0, 1, "dark")
-  expect(frame().data).toEqual(dark.data)
-  expect(drawing.createImageData).toHaveBeenCalledTimes(allocations)
+  expect(gradients()).toEqual(dark)
+  expect(drawing.lineTo.mock.calls).toEqual(contour)
+  drawing.createLinearGradient.mockClear()
   scene.draw(context, 0, 1, "light")
-  expect(frame().data).not.toEqual(dark.data)
+  expect(gradients()).not.toEqual(dark)
+  drawing.createLinearGradient.mockClear()
   scene.draw(context, 0, 1, "dark")
-  expect(frame().data).toEqual(dark.data)
-  for (const [width, height] of [[7680, 4320], [4320, 7680], [20000, 20], [1, 1]]) {
+  expect(gradients()).toEqual(dark)
+  for (const [width, height] of [[1200, 600], [390, 844], [7680, 4320], [1, 1]]) {
+    drawing.lineTo.mockClear()
     scene.resize(width, height); scene.draw(context, 0, 1)
-    const image = frame()
-    expect(image.width * image.height).toBeLessThanOrEqual(FIRE_MAX_PIXELS)
-    expect(Math.max(image.width, image.height)).toBeLessThanOrEqual(320)
+    expect(drawing.lineTo).toHaveBeenCalledTimes(410)
+    expect(drawing.lineTo.mock.calls.every(([x, y]) => x >= 0 && x <= width && y >= 0 && y <= height)).toBe(true)
   }
-  scene.resize(800, 600); scene.draw(context, 0, 1, "dark")
-  expect(frame().data).toEqual(dark.data)
-  scene.resize(0, 0)
-  const paints = drawing.putImageData.mock.calls.length
-  scene.draw(context, 0.1, 1)
-  expect(drawing.putImageData).toHaveBeenCalledTimes(paints)
-})
-
-it("Fire changes gradually without randomized dither or whole-frame flicker", () => {
-  const scene = createScene("fire")
-  scene.resize(800, 600); scene.draw(context, 0, 1)
-  let before = frame()
-  for (let step = 0; step < 20; step++) {
-    scene.draw(context, 0.1, 1)
-    const after = frame()
-    let changed = 0
-    for (let pixel = 0; pixel < after.data.length / 4; pixel++) {
-      const offset = pixel * 4
-      if (after.data[offset] !== before.data[offset] || after.data[offset + 3] !== before.data[offset + 3]) changed++
-    }
-    expect(changed / (after.width * after.height)).toBeLessThan(0.02)
-    before = after
-  }
+  scene.resize(800, 600); drawing.lineTo.mockClear(); scene.draw(context, 0, 1, "dark")
+  expect(drawing.lineTo.mock.calls).toEqual(contour)
+  scene.resize(0, 0); drawing.fill.mockClear(); scene.draw(context, 0.1, 1)
+  expect(drawing.fill).not.toHaveBeenCalled()
 })

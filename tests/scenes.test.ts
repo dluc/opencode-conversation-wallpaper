@@ -5,12 +5,10 @@ import { drawing } from "./environment"
 
 const context = drawing as unknown as CanvasRenderingContext2D
 function commands() {
-  const vectors = [drawing.fillText, drawing.drawImage, drawing.arc, drawing.ellipse, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect].map(fn => [...fn.mock.calls])
-  // Raster scenes reuse their ImageData; snapshot bytes before the next paint.
-  return [...vectors, drawing.putImageData.mock.calls.map(([image]) => [...image.data])]
+  return [drawing.fillText, drawing.drawImage, drawing.arc, drawing.ellipse, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect].map(fn => [...fn.mock.calls])
 }
 function clearCommands() {
-  for (const fn of [drawing.fillText, drawing.drawImage, drawing.arc, drawing.ellipse, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect, drawing.putImageData]) fn.mockClear()
+  for (const fn of [drawing.fillText, drawing.drawImage, drawing.arc, drawing.ellipse, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect]) fn.mockClear()
 }
 
 describe("wallpaper collection", () => {
@@ -86,23 +84,27 @@ describe("wallpaper collection", () => {
   for (const entry of collection) {
     it(`${entry.title} really runs at 4x instead of silently clamping at 2x`, () => {
       const random = vi.spyOn(Math, "random").mockReturnValue(0.5)
+      const clock = vi.spyOn(Date, "now").mockReturnValue(1_800_000_000_000)
       try {
         const standard = createScene(entry.id), maximum = createScene(entry.id)
         standard.resize(800, 600); maximum.resize(800, 600)
         standard.draw(context, 0, 1); maximum.draw(context, 0, 1)
         clearCommands()
+        clock.mockReturnValue(1_800_000_000_100)
         standard.draw(context, 0.1, 1)
         const normal = commands()
         const normalColor = drawing.fillStyle
         clearCommands()
         expect(MAX_SPEED).toBe(4)
+        clock.mockReturnValue(1_800_000_000_025)
         maximum.draw(context, 0.025, MAX_SPEED)
         expect(commands()).toEqual(normal)
-        if (entry.id === "rainbow") expect(drawing.fillStyle).toBe(normalColor)
-      } finally { random.mockRestore() }
+        if (entry.id === "rainbow") expect(Number(drawing.fillStyle.match(/^hsl\(([^,]+)/)![1])).toBeCloseTo(Number(normalColor.match(/^hsl\(([^,]+)/)![1]), 4)
+      } finally { random.mockRestore(); clock.mockRestore() }
     })
     it(`${entry.title} paints a stable still frame and advances with elapsed time`, () => {
       const random = vi.spyOn(Math, "random").mockReturnValue(0.5)
+      const clock = vi.spyOn(Date, "now").mockReturnValue(1_800_000_000_000)
       try {
         const scene = createScene(entry.id)
         scene.resize(800, 600)
@@ -116,6 +118,7 @@ describe("wallpaper collection", () => {
         scene.draw(context, 0, 1)
         expect(commands()).toEqual(still)
         clearCommands()
+        clock.mockReturnValue(1_800_000_000_100)
         scene.draw(context, 0.1, 1)
         if (entry.id === "life") {
           // Cellular evolution advances once per 0.3 simulated seconds, not on every draw.
@@ -124,28 +127,31 @@ describe("wallpaper collection", () => {
         }
         if (entry.id === "rainbow") expect(drawing.fillStyle).not.toBe(stillColor)
         else expect(commands()).not.toEqual(still)
-      } finally { random.mockRestore() }
+      } finally { random.mockRestore(); clock.mockRestore() }
     })
     it(`${entry.title} scales motion by speed and handles empty/changed layouts`, () => {
       const random = vi.spyOn(Math, "random").mockReturnValue(0.5)
+      const clock = vi.spyOn(Date, "now").mockReturnValue(1_800_000_000_000)
       try {
         const slow = createScene(entry.id), fast = createScene(entry.id)
         slow.resize(800, 600); fast.resize(800, 600)
         slow.draw(context, 0, 1); fast.draw(context, 0, 1)
         clearCommands()
+        clock.mockReturnValue(1_800_000_000_100)
         slow.draw(context, 0.1, 0.5)
         const halfSpeed = commands()
         const halfColor = drawing.fillStyle
         clearCommands()
+        clock.mockReturnValue(1_800_000_000_050)
         fast.draw(context, 0.05, 1)
         expect(commands()).toEqual(halfSpeed)
-        if (entry.id === "rainbow") expect(drawing.fillStyle).toBe(halfColor)
+        if (entry.id === "rainbow") expect(Number(drawing.fillStyle.match(/^hsl\(([^,]+)/)![1])).toBeCloseTo(Number(halfColor.match(/^hsl\(([^,]+)/)![1]), 4)
         expect(() => {
           slow.resize(0, 0); slow.draw(context, 0.1, 1)
           slow.resize(1, 1); slow.draw(context, 0.1, 1)
           slow.resize(390, 844); slow.draw(context, 0.1, 2)
         }).not.toThrow()
-      } finally { random.mockRestore() }
+      } finally { random.mockRestore(); clock.mockRestore() }
     })
   }
 })

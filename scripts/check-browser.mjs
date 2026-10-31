@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { copyFile, mkdir } from "node:fs/promises"
+import { copyFile, mkdir, writeFile } from "node:fs/promises"
 import { chromium } from "playwright"
 import { createServer } from "vite"
 
@@ -127,18 +127,67 @@ try {
         return pixels[3] === 255 && pixels.every((value, index) => value === pixels[index % 4])
       })
       assert(uniform, "Rainbow must be one opaque solid color over the entire canvas, not a gradient or shapes")
+      // Control only the mock page's Date.now; rAF/performance clocks keep running.
+      await page.evaluate(() => { window.__realDateNow = Date.now; Date.now = () => 1_800_000_033_000 })
+      try {
+        await page.getByRole("radio", { name: /^Image\b/ }).check()
+        await page.getByRole("radio", { name: /^Rainbow\b/ }).check()
+        await showPreview()
+        const pixel = canvas => [...canvas.getContext("2d").getImageData(0, 0, 1, 1).data]
+        const color = await page.locator(".cw-preview canvas").first().evaluate(pixel)
+        await page.getByRole("button", { name: "View conversation", exact: true }).click()
+        assert.deepEqual(await page.locator(".test-timeline canvas").first().evaluate(pixel), color, "Rainbow reset when navigating to the conversation")
+        await page.getByRole("button", { name: "Wallpaper settings", exact: true }).click()
+        await showPreview()
+        assert.deepEqual(await page.locator(".cw-preview canvas").first().evaluate(pixel), color, "Rainbow reset when remounting settings")
+        await page.evaluate(() => { Date.now = () => 1_800_000_093_000 })
+        await page.getByRole("slider", { name: "Dimming", exact: true }).evaluate(input => {
+          input.value = "40"; input.dispatchEvent(new Event("change", { bubbles: true }))
+        })
+        assert.deepEqual(await page.locator(".cw-preview canvas").first().evaluate(pixel), color, "Paused Rainbow followed the wall clock")
+        await setPaused(false)
+        await page.waitForFunction(previous => {
+          const pixel = document.querySelector(".cw-preview canvas").getContext("2d").getImageData(0, 0, 1, 1).data
+          return pixel.some((value, i) => value !== previous[i])
+        }, color)
+        await setPaused(true)
+      } finally {
+        await page.evaluate(() => { Date.now = window.__realDateNow; delete window.__realDateNow })
+      }
     }
     if (mode === "fire") {
       const coverage = await page.locator(".cw-preview canvas").first().evaluate(canvas => {
         const pixels = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data
         let visible = 0, upper = 0
-        for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 80) {
+        for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 12) {
           visible++
           if (i < pixels.length * 0.2) upper++
         }
         return { total: visible / (pixels.length / 4), upper: upper / (pixels.length / 4) }
       })
       assert(coverage.total > 0.75 && coverage.upper > 0.05, `Fire must reach through most of the canvas: ${JSON.stringify(coverage)}`)
+      // Exercise the real renderer at the cool half-cycle without waiting two minutes.
+      for (const appearance of ["dark", "light"]) {
+        const cool = await page.evaluate(async appearance => {
+          const { createScene } = await import("/src/scenes.ts")
+          const canvas = document.createElement("canvas"); canvas.width = 712; canvas.height = 400
+          const context = canvas.getContext("2d"), scene = createScene("fire")
+          scene.resize(canvas.width, canvas.height)
+          for (let i = 0; i < 300; i++) scene.draw(context, 0.1, 4, appearance)
+          const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data
+          let red = 0, green = 0, blue = 0
+          for (let i = 0; i < pixels.length; i += 4) {
+            red += pixels[i] * pixels[i + 3]; green += pixels[i + 1] * pixels[i + 3]; blue += pixels[i + 2] * pixels[i + 3]
+          }
+          const capture = document.createElement("canvas"); capture.width = canvas.width; capture.height = canvas.height
+          const output = capture.getContext("2d")
+          output.fillStyle = appearance === "dark" ? "#121513" : "#fdfefd"; output.fillRect(0, 0, capture.width, capture.height)
+          output.globalAlpha = 0.45; output.drawImage(canvas, 0, 0)
+          return { red, green, blue, capture: capture.toDataURL("image/png") }
+        }, appearance)
+        assert(cool.green > cool.red * 1.5 && cool.blue > cool.red * 1.5, `Fire cool palette is not blue/green in ${appearance} mode`)
+        await writeFile(`test-results/fire-cool-${appearance}.png`, Buffer.from(cool.capture.split(",")[1], "base64"))
+      }
     }
     if (mode === "cardiogram") {
       const resetPulse = async () => {
@@ -360,7 +409,7 @@ try {
     }
     console.log("README screenshots refreshed in docs/images/ from the verified mock desktop layout.")
   }
-  console.log("Browser checks passed: all 32 animations, full-area morphing Fire, uniform full-area Rainbow color, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
+  console.log("Browser checks passed: all 32 animations, smooth full-area Fire, timestamp-synchronized uniform Rainbow across navigation, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
 } finally {
   await browser.close()
   await server.close()

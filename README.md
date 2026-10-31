@@ -40,8 +40,8 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 | **Contours** | Slowly morphing topographic lines |
 | **Tremor** | Seismograph-style vibrations alternating between bursts and quieter intervals |
 | **Polygraph** | Three independently wavering, instrument-style traces |
-| **Rainbow** | One solid background color slowly cycling through the full color wheel |
-| **Fire** | Broad flame bands rising, bending, and slowly morphing across most of the background |
+| **Rainbow** | One solid background color following a timestamp-synchronized hue cycle |
+| **Fire** | Smooth morphing flame bands, slowly cycling from yellow/red to blue/green |
 | **Image** | A still or animated local image, displayed as-is |
 
 Each built-in wallpaper defines its own movement; there is no direction control. Select one from the gallery,
@@ -76,18 +76,22 @@ OpenCode Desktop installation. Your theme, fonts, and dimming setting may look d
 
 **Fire** takes its cue from Aurora's broad, unhurried, morphing color bands—not a realistic fireplace. Large flame
 tongues rise from the bottom and reach through most of the available width and height. Their silhouettes stretch,
-bend, merge, and relax rather than scrolling a fixed picture. Five warm pigments per appearance and fine, stationary
-dithering soften the transitions without sparks, rapid flicker, smoke particles, or sharp detail behind your text.
-Dark mode uses muted terracotta, orange, and amber; light mode uses softer terracotta and warm pastels. It follows
+bend, merge, and relax rather than scrolling a fixed picture. Smooth, translucent vector gradients use the same
+coloring approach as Aurora: no dithering, pixel texture, sparks, rapid flicker, or smoke particles behind your text.
+The whole palette slowly moves from yellow/red to blue/green flames and back in four simulated minutes at 1× speed.
+All bands stay within one coordinated hue family at a time, rather than mixing warm and cool flames in the same frame.
+Dark mode uses luminous colors; light mode uses deeper, ink-like counterparts. These are stylized color moods, not
+a physical combustion simulation or an oxygen measurement. It follows
 OpenCode's appearance setting, including changes while paused, and shares the normal dimming, speed, pause, and reduced-motion
 controls. Aurora itself is unchanged.
 
 ### Rainbow · one slowly changing color
 
 **Rainbow** fills the whole conversation with a single uniform color—no spatial gradient, pattern, or moving shapes.
-It smoothly visits every hue and loops after three minutes at 1× speed (45 seconds at 4×). Dark themes use deeper shades;
-light themes use pastels to preserve text readability. Dimming controls its strength, and pause/reduced motion freezes
-the current color rather than continuing the cycle in the background.
+Its hue comes from the current timestamp, looping every three minutes at 1× speed (45 seconds at 4×), so opening another
+conversation or returning to settings does not restart at red. At the same timestamp and speed, all active instances share
+the same hue. Dark themes use deeper shades; light themes use pastels. Dimming controls its strength. Pause/reduced motion
+freezes the displayed color; resuming catches up to the current timestamp rather than continuing from a private local clock.
 
 ### Instrument-style lines
 
@@ -139,7 +143,7 @@ Maze scales the current match immediately, then generates a grid suited to the n
 - Clouds, fireflies, and stars automatically adapt to the app's light or dark appearance. Light mode uses blue-gray mist,
   amber fireflies, and ink-blue stars; the original dark palettes are preserved. Paused wallpapers and gallery thumbnails
   repaint when you switch themes, while uploaded images keep their original colors.
-- Fire uses at most 49,152 procedural pixels in a reusable offscreen canvas, softly scaled to fill the timeline; its fine dither screen stays fixed instead of sparkling.
+- Fire uses five smooth vector-gradient bands with bounded contour sampling, independent of screen resolution; its warm-to-cool palette morphs with the flame shapes.
 - Settings persist across sessions and apply to all workspaces. No model calls, remote image requests, or uploads.
 - Command-palette actions to open settings, hide/show wallpaper, and pause/resume animation.
 
@@ -329,10 +333,12 @@ Cellular-automaton tests verify still lifes, blinkers, gliders, edge wrapping, b
 tests verify bounded population and continuous movement through offscreen entry/exit points. The pulse is checked for
 periodicity, its fixed peak location, and its flat resting interval. Instrument traces have bounded amplitudes and distinct channels;
 the browser also verifies that the heartbeat's peak stays at the same x coordinate as its height changes, then returns flat.
-Rainbow tests verify a complete hue-wheel cycle and seamless looping; browser checks inspect every canvas pixel to
-ensure its fill is a single uniform full-area color, while still animating and respecting pause and theme changes.
-Fire checks verify five-pigment palettes, broad coverage in portrait/landscape, upward deformation, changing silhouettes,
-bounded raster allocation, and paused resize/theme restoration. Browser checks also measure full-area Fire coverage.
+Rainbow tests verify a complete hue-wheel cycle, timestamp synchronization across new instances, speed scaling, paused
+repainting, and catch-up on resume. Browser checks inspect every canvas pixel for a uniform full-area fill and verify
+that navigating between the conversation and remounted settings does not reset its hue.
+Fire checks verify narrow coordinated warm-to-cool palettes, smooth gradient fills without dithering, broad coverage,
+upward deformation, changing silhouettes, bounded vector geometry, and paused resize/theme restoration.
+Browser checks also measure full-area Fire coverage.
 
 These are not a live OpenCode Desktop installation test. Verify the plugin in your actual app version before
 relying on compatibility. No global OpenCode configuration is modified by the tests or build.

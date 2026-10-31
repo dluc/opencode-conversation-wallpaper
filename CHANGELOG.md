@@ -3,7 +3,14 @@
 Notable changes to Conversation Wallpaper. Releases are available as Git tags;
 the default branch can be installed and updated with the OpenCode CLI.
 
-## Unreleased (0.7.0)
+## Unreleased (0.7.1)
+
+- Synchronize Rainbow's hue to the current timestamp so navigation/remounting does not restart it; paused stills remain frozen and resume catches up.
+- Replace Fire's dithered raster with smooth, translucent vector gradients like Aurora's.
+- Slowly cycle Fire's whole palette from yellow/red to blue/green and back, without mixed warm/cool flames in the same frame.
+- Verify Rainbow navigation synchronization and Fire's warm/cool rendering, with refreshed preview images.
+
+## Preview (0.7.0)
 
 - Add Fire: broad, slowly morphing flames rising from the bottom across most of the conversation background.
 - Use five warm pigments per appearance, fine stationary dithering, and a bounded reusable raster; no sparks or flicker.

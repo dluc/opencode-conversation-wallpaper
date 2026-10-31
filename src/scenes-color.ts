@@ -1,4 +1,5 @@
 import { AmbientScene, type Appearance } from "./scene"
+import { clamp, MIN_SPEED, MAX_SPEED } from "./preferences"
 
 export const RAINBOW_CYCLE_SECONDS = 180
 
@@ -9,6 +10,19 @@ export function rainbowColor(time: number, appearance: Appearance) {
 }
 
 export class Rainbow extends AmbientScene {
+  private initialized = false
+
+  draw(ctx: CanvasRenderingContext2D, elapsed: number, speed: number, appearance: Appearance = "dark") {
+    if (!this.width || !this.height) return
+    // Every mounted timeline samples the same epoch clock, not a local start time.
+    // Zero elapsed means a still repaint: freeze across pause/theme/resize updates.
+    if (!this.initialized || elapsed > 0) {
+      this.time = Date.now() / 1000 * clamp(speed, MIN_SPEED, MAX_SPEED)
+      this.initialized = true
+    }
+    super.draw(ctx, 0, 1, appearance)
+  }
+
   protected paint(ctx: CanvasRenderingContext2D) {
     ctx.globalAlpha = 1
     ctx.fillStyle = rainbowColor(this.time, this.appearance)
