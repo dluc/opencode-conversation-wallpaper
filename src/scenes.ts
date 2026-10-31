@@ -10,6 +10,7 @@ import { Glass, Ocean, Coast, Embers, Leaves } from "./scenes-landscapes"
 import { Constellations, Orbits, Boats, Contours } from "./scenes-patterns"
 import { Tremor, Polygraph } from "./scenes-instruments"
 import { Rainbow } from "./scenes-color"
+import { Fire } from "./scenes-fire"
 export type { Appearance, Scene } from "./scene"
 
 export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; description: string }> = [
@@ -44,6 +45,7 @@ export const collection: ReadonlyArray<{ id: BuiltinMode; title: string; descrip
   { id: "tremor", title: "Tremor", description: "Seismic-style vibrations · Decorative only" },
   { id: "polygraph", title: "Polygraph", description: "Three wavering traces · Decorative only" },
   { id: "rainbow", title: "Rainbow", description: "Solid color · Slow full-spectrum cycle" },
+  { id: "fire", title: "Fire", description: "Morphing flames · Broad rising color bands" },
 ]
 
 export function wallpaperName(mode: string): string {
@@ -239,5 +241,6 @@ export function createScene(mode: BuiltinMode): Scene {
     case "tremor": return new Tremor()
     case "polygraph": return new Polygraph()
     case "rainbow": return new Rainbow()
+    case "fire": return new Fire()
   }
 }

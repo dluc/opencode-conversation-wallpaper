@@ -3,6 +3,13 @@
 Notable changes to Conversation Wallpaper. Releases are available as Git tags;
 the default branch can be installed and updated with the OpenCode CLI.
 
+## Unreleased (0.7.0)
+
+- Add Fire: broad, slowly morphing flames rising from the bottom across most of the conversation background.
+- Use five warm pigments per appearance, fine stationary dithering, and a bounded reusable raster; no sparks or flicker.
+- Preserve Aurora unchanged and reuse the existing dimming, speed, pause, visibility, and reduced-motion controls.
+- Add coverage, palette, morphing, upward-motion, resizing, and browser checks, plus light/dark README captures.
+
 ## [0.6.0]
 
 - Add Rainbow: one solid full-area background that smoothly cycles the entire color wheel.

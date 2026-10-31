@@ -5,10 +5,12 @@ import { drawing } from "./environment"
 
 const context = drawing as unknown as CanvasRenderingContext2D
 function commands() {
-  return [drawing.fillText, drawing.drawImage, drawing.arc, drawing.ellipse, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect].map(fn => [...fn.mock.calls])
+  const vectors = [drawing.fillText, drawing.drawImage, drawing.arc, drawing.ellipse, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect].map(fn => [...fn.mock.calls])
+  // Raster scenes reuse their ImageData; snapshot bytes before the next paint.
+  return [...vectors, drawing.putImageData.mock.calls.map(([image]) => [...image.data])]
 }
 function clearCommands() {
-  for (const fn of [drawing.fillText, drawing.drawImage, drawing.arc, drawing.ellipse, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect]) fn.mockClear()
+  for (const fn of [drawing.fillText, drawing.drawImage, drawing.arc, drawing.ellipse, drawing.moveTo, drawing.lineTo, drawing.fillRect, drawing.strokeRect, drawing.putImageData]) fn.mockClear()
 }
 
 describe("wallpaper collection", () => {
@@ -64,7 +66,7 @@ describe("wallpaper collection", () => {
   }
   it("offers each built-in exactly once without a user-configurable direction", () => {
     expect(collection.map(scene => scene.id)).toEqual(MODES.filter(mode => mode !== "image"))
-    expect(new Set(collection.map(scene => scene.id)).size).toBe(31)
+    expect(new Set(collection.map(scene => scene.id)).size).toBe(32)
     expect(wallpaperName("image")).toBe("Image")
   })
   it("uses unique single-word display names without changing stored mode IDs", () => {
@@ -75,7 +77,7 @@ describe("wallpaper collection", () => {
       "ripple-pond": "Ripples", cardiogram: "Cardiogram", river: "River", life: "Life", plaza: "Plaza",
       constellations: "Constellations", glass: "Glass", ocean: "Ocean", embers: "Embers", coast: "Coast",
       boats: "Boats", orbits: "Orbits", leaves: "Leaves", contours: "Contours", tremor: "Tremor", polygraph: "Polygraph",
-      rainbow: "Rainbow",
+      rainbow: "Rainbow", fire: "Fire",
     })
     const titles = [...collection.map(scene => scene.title), wallpaperName("image")]
     expect(titles.every(title => /^\p{L}+$/u.test(title))).toBe(true)

@@ -1,6 +1,6 @@
 export const MODES = ["matrix", "clouds", "fireflies", "starfield", "aurora", "meteors", "night-sky", "balls", "blockfall", "disco", "maze-chase",
   "pixel-clouds", "train-window", "aquarium", "ripple-pond", "cardiogram", "river", "life", "plaza",
-  "constellations", "glass", "ocean", "embers", "coast", "boats", "orbits", "leaves", "contours", "tremor", "polygraph", "rainbow", "image"] as const
+  "constellations", "glass", "ocean", "embers", "coast", "boats", "orbits", "leaves", "contours", "tremor", "polygraph", "rainbow", "fire", "image"] as const
 export type Mode = typeof MODES[number]
 export type BuiltinMode = Exclude<Mode, "image">
 export const MIN_SPEED = 0.2

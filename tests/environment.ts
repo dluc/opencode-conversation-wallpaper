@@ -6,6 +6,8 @@ export const drawing = {
   arc: vi.fn(), ellipse: vi.fn(), fill: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(), stroke: vi.fn(),
   createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
   createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+  createImageData: vi.fn((width: number, height: number) => ({ width, height, data: new Uint8ClampedArray(width * height * 4) })),
+  putImageData: vi.fn(),
   fillStyle: "", font: "", textAlign: "", globalAlpha: 1, lineWidth: 1, strokeStyle: "", globalCompositeOperation: "source-over",
 }
 export let reduced = false

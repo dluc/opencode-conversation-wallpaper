@@ -97,7 +97,7 @@ try {
   await page.screenshot({ path: "test-results/conversation.png", fullPage: true })
 
   await page.getByRole("button", { name: "Wallpaper settings" }).click()
-  assert.equal(await page.getByRole("radio").count(), 32)
+  assert.equal(await page.getByRole("radio").count(), 33)
   assert.equal(await page.getByRole("combobox", { name: /Direction/i }).count(), 0)
   await page.getByRole("radio", { name: /^Rain\b/ }).focus()
   await page.keyboard.press("ArrowRight")
@@ -109,7 +109,7 @@ try {
     ["ripple-pond", "Ripples"], ["cardiogram", "Cardiogram"], ["river", "River"],
     ["life", "Life"], ["plaza", "Plaza"], ["constellations", "Constellations"], ["glass", "Glass"],
     ["ocean", "Ocean"], ["embers", "Embers"], ["coast", "Coast"], ["boats", "Boats"], ["orbits", "Orbits"],
-    ["leaves", "Leaves"], ["contours", "Contours"], ["tremor", "Tremor"], ["polygraph", "Polygraph"], ["rainbow", "Rainbow"]]
+    ["leaves", "Leaves"], ["contours", "Contours"], ["tremor", "Tremor"], ["polygraph", "Polygraph"], ["rainbow", "Rainbow"], ["fire", "Fire"]]
   for (const [mode, title] of effects) {
     await page.getByRole("radio", { name: new RegExp(`^${title}\\b`) }).check()
     await speed.evaluate(input => { input.value = "4"; input.dispatchEvent(new Event("change", { bubbles: true })) })
@@ -127,6 +127,18 @@ try {
         return pixels[3] === 255 && pixels.every((value, index) => value === pixels[index % 4])
       })
       assert(uniform, "Rainbow must be one opaque solid color over the entire canvas, not a gradient or shapes")
+    }
+    if (mode === "fire") {
+      const coverage = await page.locator(".cw-preview canvas").first().evaluate(canvas => {
+        const pixels = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data
+        let visible = 0, upper = 0
+        for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 80) {
+          visible++
+          if (i < pixels.length * 0.2) upper++
+        }
+        return { total: visible / (pixels.length / 4), upper: upper / (pixels.length / 4) }
+      })
+      assert(coverage.total > 0.75 && coverage.upper > 0.05, `Fire must reach through most of the canvas: ${JSON.stringify(coverage)}`)
     }
     if (mode === "cardiogram") {
       const resetPulse = async () => {
@@ -149,11 +161,23 @@ try {
       await setPaused(true)
       await resetPulse() // Documentation shows the fixed spike, not a random quiet interval.
     }
-    if (mode === "blockfall" || mode === "maze-chase") {
+    if (mode === "blockfall" || mode === "maze-chase" || mode === "fire") {
       await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "400px" })
       await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height >= 400)
     }
     await page.locator(".cw-preview").screenshot({ path: `test-results/${mode}.png` })
+    if (mode === "fire") {
+      await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "" })
+      await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height < 300)
+      await page.getByRole("button", { name: "View conversation", exact: true }).click()
+      await page.waitForFunction(() => {
+        const canvas = document.querySelector('.test-timeline .cw-layer[data-wallpaper="fire"] canvas')
+        return canvas?.height >= 600
+      })
+      await page.locator(".test-conversation").screenshot({ path: "test-results/fire-conversation-dark.png" })
+      await page.getByRole("button", { name: "Wallpaper settings", exact: true }).click()
+      await showPreview()
+    }
     if (mode === "blockfall" || mode === "maze-chase") {
       await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "" })
       await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height < 300)
@@ -178,6 +202,11 @@ try {
     await setPaused(false)
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.getByText("Animation paused by your system’s Reduce motion setting.", { exact: true }).waitFor()
+    if (mode === "fire") {
+      const reducedFrame = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+      assert.equal(await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL()), reducedFrame)
+    }
     await page.emulateMedia({ reducedMotion: "no-preference" })
     await page.getByText(new RegExp(`${title} is animating`)).waitFor()
   }
@@ -208,6 +237,10 @@ try {
   await setPaused(true)
   for (const [mode, title] of effects.filter(([id]) => id !== "aurora")) {
     await page.getByRole("radio", { name: new RegExp(`^${title}\\b`) }).check()
+    if (mode === "fire") {
+      await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "400px" })
+      await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height >= 400)
+    }
     const dark = await page.locator(".cw-preview canvas").first().evaluate(canvas => canvas.toDataURL())
     const thumbnail = page.getByRole("radio", { name: new RegExp(`^${title}\\b`) }).locator("..").locator("canvas")
     const darkThumbnail = await thumbnail.evaluate(canvas => canvas.toDataURL())
@@ -241,6 +274,10 @@ try {
     await page.waitForFunction(previous => document.querySelector(".cw-preview canvas").toDataURL() !== previous, moving)
     await setPaused(true)
     await page.getByRole("button", { name: "Use dark theme", exact: true }).click()
+    if (mode === "fire") {
+      await page.locator(".cw-preview").evaluate(element => { element.style.minHeight = "" })
+      await page.waitForFunction(() => document.querySelector(".cw-preview canvas").height < 300)
+    }
   }
   await setPaused(false)
   await page.getByRole("radio", { name: /^Image\b/ }).check()
@@ -307,17 +344,23 @@ try {
   assert.deepEqual(errors, [])
   if (process.argv.includes("--update-doc-images")) {
     await mkdir("docs/images", { recursive: true })
-    for (const [source, target] of [
+    const images = [
       ["collection.png", "collection.png"], ["aurora.png", "aurora-dark.png"],
       ["fireflies.png", "fireflies-dark.png"], ["clouds-light.png", "clouds-light.png"],
       ["starfield-light.png", "starfield-light.png"],
       ["blockfall.png", "blockfall-dark.png"], ["maze-chase.png", "maze-chase-dark.png"],
       ["pixel-clouds.png", "pixel-clouds-dark.png"], ["plaza-light.png", "plaza-light.png"],
       ["cardiogram.png", "cardiogram-dark.png"], ["tremor.png", "tremor-dark.png"], ["polygraph.png", "polygraph-dark.png"],
-    ]) await copyFile(`test-results/${source}`, `docs/images/${target}`)
+      ["fire.png", "fire-dark.png"], ["fire-light.png", "fire-light.png"],
+    ]
+    const requested = process.argv.find(arg => arg.startsWith("--doc-images="))?.slice("--doc-images=".length).split(",")
+    if (requested) for (const name of requested) assert(images.some(([, target]) => target === name), `Unknown documentation image: ${name}`)
+    for (const [source, target] of images) if (!requested || requested.includes(target)) {
+      await copyFile(`test-results/${source}`, `docs/images/${target}`)
+    }
     console.log("README screenshots refreshed in docs/images/ from the verified mock desktop layout.")
   }
-  console.log("Browser checks passed: all 31 animations, uniform full-area Rainbow color, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
+  console.log("Browser checks passed: all 32 animations, full-area morphing Fire, uniform full-area Rainbow color, light-theme pixel contrast, live and paused theme changes, original dark palettes, static gallery thumbnails, pause/resume, reduced motion, unchanged uploads, 4x built-in-only speed, chat interaction, narrow layout, unload/reload. Screenshots: test-results/")
 } finally {
   await browser.close()
   await server.close()

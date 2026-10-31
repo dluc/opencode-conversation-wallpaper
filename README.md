@@ -4,7 +4,7 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 
 [Install](#install) · [Upgrade](#upgrade-an-existing-installation) · [Changelog](CHANGELOG.md) · [Development](#development) · [MIT license](LICENSE)
 
-![Wallpaper gallery with thirty-one single-word names and an Image upload option](docs/images/collection.png)
+![Wallpaper gallery with thirty-two single-word names and an Image upload option](docs/images/collection.png)
 
 ## The collection
 
@@ -41,6 +41,7 @@ A small collection of animated atmospheres and local image backgrounds, behind c
 | **Tremor** | Seismograph-style vibrations alternating between bursts and quieter intervals |
 | **Polygraph** | Three independently wavering, instrument-style traces |
 | **Rainbow** | One solid background color slowly cycling through the full color wheel |
+| **Fire** | Broad flame bands rising, bending, and slowly morphing across most of the background |
 | **Image** | A still or animated local image, displayed as-is |
 
 Each built-in wallpaper defines its own movement; there is no direction control. Select one from the gallery,
@@ -65,7 +66,23 @@ selections, preferences, or uploaded images; only display names changed. **Mist*
 | ![Chunky pixel clouds drifting across a dark sky in several layers](docs/images/pixel-clouds-dark.png) | ![A busy light-colored plaza with many tiny pedestrians crossing in different directions](docs/images/plaza-light.png) |
 
 These are real renderer captures from the mock desktop test layout, paused for screenshots—not screenshots of a live
-OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All thirty-one built-ins animate.
+OpenCode Desktop installation. Your theme, fonts, and dimming setting may look different. All thirty-two built-ins animate.
+
+### Fire · slow color, changing shape
+
+| Dark theme | Light theme |
+| --- | --- |
+| ![Broad terracotta, orange, and amber flame bands behind readable text in dark mode](docs/images/fire-dark.png) | ![Soft terracotta and warm pastel flame bands behind dark text in light mode](docs/images/fire-light.png) |
+
+**Fire** takes its cue from Aurora's broad, unhurried, morphing color bands—not a realistic fireplace. Large flame
+tongues rise from the bottom and reach through most of the available width and height. Their silhouettes stretch,
+bend, merge, and relax rather than scrolling a fixed picture. Five warm pigments per appearance and fine, stationary
+dithering soften the transitions without sparks, rapid flicker, smoke particles, or sharp detail behind your text.
+Dark mode uses muted terracotta, orange, and amber; light mode uses softer terracotta and warm pastels. It follows
+OpenCode's appearance setting, including changes while paused, and shares the normal dimming, speed, pause, and reduced-motion
+controls. Aurora itself is unchanged.
+
+### Rainbow · one slowly changing color
 
 **Rainbow** fills the whole conversation with a single uniform color—no spatial gradient, pattern, or moving shapes.
 It smoothly visits every hue and loops after three minutes at 1× speed (45 seconds at 4×). Dark themes use deeper shades;
@@ -118,10 +135,11 @@ Maze scales the current match immediately, then generates a grid suited to the n
 - Honors system reduced motion by default, with an explicit opt-out. Built-ins stop and images freeze when the timeline or app document is hidden.
 - Live preview status explains pauses and reports actual painted frames. A **Make wallpaper more visible** preset sets 40% dimming and 1.2× speed.
 - Canvas effects capped at 24 fps and 2× pixel density. Cloud and firefly glow textures are cached; particle counts are bounded.
-- Thirty-one atmospheres spanning retro scenery, nature, space, autonomous games, cellular evolution, instrument-style lines, a busy crowd, and a slow solid-color cycle.
+- Thirty-two atmospheres spanning retro scenery, nature, space, autonomous games, cellular evolution, instrument-style lines, a busy crowd, a slow solid-color cycle, and broad morphing flames.
 - Clouds, fireflies, and stars automatically adapt to the app's light or dark appearance. Light mode uses blue-gray mist,
   amber fireflies, and ink-blue stars; the original dark palettes are preserved. Paused wallpapers and gallery thumbnails
   repaint when you switch themes, while uploaded images keep their original colors.
+- Fire uses at most 49,152 procedural pixels in a reusable offscreen canvas, softly scaled to fill the timeline; its fine dither screen stays fixed instead of sparkling.
 - Settings persist across sessions and apply to all workspaces. No model calls, remote image requests, or uploads.
 - Command-palette actions to open settings, hide/show wallpaper, and pause/resume animation.
 
@@ -293,7 +311,7 @@ Do not add install-time build scripts: the prebuilt package should be usable wit
 
 ### Verification scope
 
-Unit/DOM tests cover all thirty-one renderers (motion, still frames, 4× speed, resizing), input restrictions, host detection,
+Unit/DOM tests cover all thirty-two renderers (motion, still frames, 4× speed, resizing), input restrictions, host detection,
 hidden/paused/disabled states, animation cleanup, image snapshots/errors/removal, and late-mounted/cached timelines.
 Chromium tests run the **real plugin setup and settings UI against a mock host**, checking every animation,
 static gallery thumbnails, pause/resume, reduced motion, GIF import/freeze, unchanged still uploads, preserved uploads
@@ -313,14 +331,22 @@ periodicity, its fixed peak location, and its flat resting interval. Instrument 
 the browser also verifies that the heartbeat's peak stays at the same x coordinate as its height changes, then returns flat.
 Rainbow tests verify a complete hue-wheel cycle and seamless looping; browser checks inspect every canvas pixel to
 ensure its fill is a single uniform full-area color, while still animating and respecting pause and theme changes.
+Fire checks verify five-pigment palettes, broad coverage in portrait/landscape, upward deformation, changing silhouettes,
+bounded raster allocation, and paused resize/theme restoration. Browser checks also measure full-area Fire coverage.
 
 These are not a live OpenCode Desktop installation test. Verify the plugin in your actual app version before
 relying on compatibility. No global OpenCode configuration is modified by the tests or build.
 
-Refresh the twelve checked-in README images only after the browser checks succeed:
+Refresh the fourteen checked-in README images only after the browser checks succeed:
 
 ```sh
 npm run docs:screenshots
+```
+
+To refresh only selected images without changing unrelated captures:
+
+```sh
+npm run docs:screenshots -- --doc-images=collection.png,fire-dark.png,fire-light.png
 ```
 
 Use the same `CHROME_BIN` override as the browser tests if Chromium is already installed. No external images or assets are downloaded.
